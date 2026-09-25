@@ -1,61 +1,54 @@
-# Email Spy
+# 🕵️ Email Spy
 
 **A terminal OSINT tool that turns one email address into a readable investigation.**
 
-Give it an address and it answers, in one screen: who is behind it, which
-public accounts are tied to it, how the mail infrastructure is configured, and
-where else on the open web that address appears.
+Give it an address and it answers, on one screen: **who is behind it**, **which
+public accounts are tied to it**, **how the mail infrastructure is configured**,
+and **where else on the open web that address appears**.
 
-```
+```bash
 emailspy jane.doe@example.com
 ```
 
-Python package `emailscope`; `emailscope` is kept as an alias of `emailspy`.
+🐍 Python 3.10+ · 📦 package `emailscope` (`emailscope` is an alias of `emailspy`) ·
+🗂️ **16 collection modules** · 📤 **5 output formats** · ⚖️ public sources only
+
 Reports open with the **EMAIL SPY** wordmark under the default `spy` theme —
 `--theme classic` brings back the earlier `EMAILSCOPE` look.
 
-Everything it reports comes from **public sources only** — public DNS records,
-public profile endpoints, open-source commit history, and public search indexes.
-No accounts are created, no credentials are guessed, nothing is brute-forced.
+> Everything it reports comes from **public sources only** — public DNS records,
+> public profile endpoints, open-source commit history, public code search and
+> public search indexes. **No accounts are created, no credentials are guessed,
+> nothing is brute-forced.**
 
 ---
 
-## What it collects
+## ✨ What you get
 
-| Module | Source | What you get |
-| --- | --- | --- |
-| `identity` | offline | address validity, provider, disposable-domain flag, plus-tag, **possible real names**, candidate usernames, Gravatar hashes |
-| `dns` | public DNS | MX / NS / A / AAAA, SPF, DMARC, DKIM selectors, BIMI, misconfiguration warnings |
-| `rdap` | RDAP (`rdap.org`) | registrar, registered / expires / last-changed dates, status flags, nameservers, DNSSEC — **only for the address's own domain**, skipped for free-mail providers |
-| `ct` | certspotter | certificate-transparency **subdomains of the address's own domain**, issuance count, first/last certificate date |
-| `hosts` | HackerTarget | hostnames and addresses observed for the address's own domain |
-| `urlscan` | urlscan.io | **recent public browser scans of the address's own domain**: scanned page URLs, serving IP, country, HTTP status and scan dates — skipped for free-mail providers |
-| `gravatar` | Gravatar v3 API | display name, location, job title, company, about text, avatar, **verified social accounts linked to the address** |
-| `pgp` | keys.openpgp.org | **published OpenPGP key**: fingerprint, user IDs, and the *other* addresses the owner published on the same key (a hit means the address is verified there) |
-| `github` | GitHub commit search | **real name from commit metadata**, linked GitHub login when the address is verified, repositories, first/last seen |
-| `accounts` | 9 public profile endpoints | which candidate usernames are registered on GitHub, GitLab, Mastodon, Bluesky, Keybase, Docker Hub, Hacker News, SoundCloud, Linktree |
-| `mentions` | Sourcegraph + Hacker News + Stack Exchange | **where the address itself turns up in public code and discussions**: matching repository files with the line that hit, forum posts with dates, and ready-made search links — runs for free-mail addresses too |
-| `mailhost` | RIPEstat + Shodan InternetDB | for the address's own mail servers: **ASN holder**, announced prefix, open ports, **known CVE count**, and the hostnames those IPs also serve |
-| `smtp` | the domain's real mail exchangers | `RCPT TO` verification — *mailbox exists / does not exist / unknown* |
-| `reputation` | EmailRep *(API key)* | reputation score, first/last seen, deliverability, breach flags, **linked profile list** |
-| `breaches` | Have I Been Pwned *(API key)* | breach names, dates, record counts, exposed data classes |
-| `dorks` | none | 25 ready-to-run queries (plus two per observed name) across Google, Bing, DuckDuckGo, Yandex, GitHub, Reddit, X, VirusTotal, grep.app and platform-specific `site:` dorks |
-
-`rdap`, `ct`, `hosts` and `mailhost` all describe the address's *own* domain
-and mail servers, so they are skipped with a stated reason for free-mail
-providers — Google's registration record and Google's open ports are not
-evidence about the person behind `someone@gmail.com`.
-
-The address → name → username feedback loop is the important part: the real
-name recovered from public commit metadata is fed back into the account probe,
-so `matt@mullenweg.com` goes from testing `matt` to also testing
-`mattmullenweg`, `m.mullenweg` and `mullenweg`.
+- 🧠 **Identity first** — validity, provider, disposable flag, plus-tags, and
+  *candidate real names + usernames* derived offline from the address itself.
+- 🔗 **A feedback loop** — the real name recovered from public commit metadata
+  is fed back into the account probe, so `matt@mullenweg.com` goes from testing
+  `matt` to also testing `mattmullenweg`, `m.mullenweg` and `mullenweg`.
+- 🏗️ **Infrastructure** — mail exchangers, SPF/DKIM/DMARC/BIMI, domain
+  registration, certificate transparency, observed hosts, open ports and known
+  CVEs on the mail servers.
+- 📣 **Public footprint** — Gravatar profile, signed commits, registered
+  handles on 9 platforms, published PGP keys, and where the address itself
+  turns up in public code and discussions (Sourcegraph, Hacker News, Stack
+  Exchange).
+- 📬 **A real mailbox verdict** — `RCPT TO` verification against the domain's
+  actual mail exchangers: *exists / does not exist / unknown*.
+- 🕸️ **23 ready-to-run dorks** (plus two per candidate name found) handed over
+  as links — the tool never scrapes search engines for you.
+- 📤 **Five ways to take the result with you** — terminal, JSON, CSV, Markdown,
+  self-contained HTML (see [Outputs](#-outputs--everything-the-tool-can-give-you)).
 
 ---
 
-## Install
+## 📦 Install
 
-Requires Python 3.10+.
+Requires **Python 3.10+**.
 
 ```bash
 git clone <your-fork-url>
@@ -70,39 +63,229 @@ Or straight from PyPI once published:
 pipx install emailscope   # provides `emailspy` and `emailscope`
 ```
 
-## Quick start
+---
+
+## 🚀 Quick start
 
 ```bash
-# full investigation, rich terminal report
+# 🖥️ full investigation, rich terminal report
 emailspy jane.doe@example.com
 
-# machine-readable
+# 🤖 machine-readable
 emailspy jane.doe@example.com --json -o report.json
 emailspy jane.doe@example.com --markdown -o report.md
 
-# a self-contained report you can send to someone (no scripts, no fonts, prints cleanly)
+# 🌐 a self-contained report you can send to someone
+#    (no scripts, no fonts, no network — it opens and prints anywhere)
 emailspy jane.doe@example.com -o report.html
 
-# only the modules you care about
+# 🎯 only the modules you care about
 emailspy jane.doe@example.com --only dns,rdap,smtp
 
-# route every request through Tor
+# 🧅 route every request through Tor
 emailspy jane.doe@example.com --proxy socks5h://127.0.0.1:9150
 
-# several addresses at once (progress goes to stderr, output stays clean)
+# 👥 several addresses at once (progress goes to stderr, output stays clean)
 emailspy a@example.com b@example.org --only dns,smtp
 
-# a whole roster from a file
+# 📄 a whole roster from a file, triaged into a spreadsheet
 emailspy --batch roster.txt --csv -o triage.csv
 
-# offline only — no packets leave your machine except DNS
+# 🔇 offline only — no packets leave your machine except DNS
 emailspy jane.doe@example.com --no-accounts --no-smtp --no-gravatar --no-github
 
-# open the generated search queries in your browser
+# 🌍 open the generated search queries in your browser
 emailspy jane.doe@example.com --open
 ```
 
-### Example output
+---
+
+## 📤 Outputs — everything the tool can give you
+
+The tool produces **five formats** from the same investigation. Pick one with a
+flag, or just name the file extension and let `-o` infer it.
+
+| 🎨 Format | Flag | File extension | Best for |
+| --- | --- | --- | --- |
+| 🖥️ Rich terminal report | *(default)* | — | Reading the result right now |
+| 🤖 JSON | `--json` | `.json` | Scripts, pipelines, further processing |
+| 📊 CSV | `--csv` | `.csv` | Spreadsheets — triaging many addresses |
+| 📝 Markdown | `--markdown` | `.md`, `.markdown` | Pastebins, PRs, notes, wikis |
+| 🌐 HTML | `--html` | `.html`, `.htm` | Sending to someone, printing, archiving |
+
+```bash
+emailspy jane.doe@example.com -o report.html   # extension picks the format
+emailspy jane.doe@example.com --csv            # format to stdout
+```
+
+> 💡 Only **one** format flag at a time — combining two is a usage error.
+
+### 🖥️ 1. Rich terminal report (default)
+
+What you see on screen when you run the tool with no format flag:
+
+- 🏷️ **ASCII wordmark** + `CASE` id + timestamp
+- 📌 **`SUBJECT`** line — the part you supplied and the third-party domain in
+  different colours
+- 🔀 **`EGRESS`** line when `--proxy` is in use (you always know where the
+  traffic went)
+- 📈 **Summary strip** — `PROVIDER` · `MAILBOX` · `HANDLES` · `NAMES`, the four
+  facts you want before opening anything
+- 🧾 **One numbered panel per module** with a status stamp, a summary line,
+  the detail (rows, tables, verdicts) and the **source right-aligned** on every
+  heading so provenance is never ambiguous
+- 🔗 **Generated search links** under the panels (limit `12` by default,
+  `--link-limit N` or `--no-links` to change, `--open` to launch the top 8)
+- 🧮 **Footer counts** — `FINDINGS · SOURCES · SKIPPED · CASE · version`
+
+Statuses, and what they mean:
+
+| Stamp | Meaning |
+| --- | --- |
+| 🟨 `[ FOUND ]` | Real data was found — the only filled element on screen |
+| ⬜ `[ INFO ]` | The module ran and found nothing notable |
+| 🟨 `[ UNKNOWN ]` | We could not tell (blocked, deferred, timed out) |
+| ⬜ `skipped` | Disabled or missing API key — one dim line, stated reason |
+| 🟥 `[ ERROR ]` | That source failed outright |
+
+Add `--quiet` to hide skipped lines, `--no-color` (or `NO_COLOR=1`) for plain text.
+
+### 🤖 2. JSON — the full picture
+
+Everything the terminal shows, machine-readable: run metadata plus every
+finding with its raw data and generated links.
+
+```json
+{
+  "tool": "emailscope",
+  "version": "1.7.0",
+  "generated_at": "2026-09-25T16:33:36.107415+00:00",
+  "email": "john.doe@example.com",
+  "findings": [
+    {
+      "module": "identity",
+      "title": "Address",
+      "status": "info",
+      "summary": "Custom domain (example.com).",
+      "data": {
+        "email": "john.doe@example.com",
+        "valid": true,
+        "local_part": "john.doe",
+        "domain": "example.com",
+        "name_candidates": ["John Doe", "Doe John", "J. Doe", "John D."],
+        "handle_candidates": ["john.doe", "johndoe", "jdoe", "johnd", "john_doe"]
+      },
+      "links": []
+    }
+  ]
+}
+```
+
+**One address → this object. Several addresses → a JSON array** of the same
+objects. Safe to pipe: progress lines go to **stderr**, stdout carries only JSON.
+
+### 📊 3. CSV — one row per module, per address
+
+A spreadsheet-ready triage sheet. Header is always:
+
+```csv
+email,module,status,title,summary,source,links
+john.doe@example.com,identity,info,Address,Custom domain (example.com).,offline analysis,
+john.doe@example.com,smtp,skip,Deliverability,Disabled.,mail exchangers,
+jane@example.org,identity,info,Address,Custom domain (example.org).,offline analysis,
+```
+
+The `email` column keeps every row attributable when you stack a whole roster
+in one file. Nested detail stays in JSON — CSV is for scanning, JSON is for digging.
+
+### 📝 4. Markdown — notes you can paste anywhere
+
+```markdown
+# Email Spy report — `john.doe@example.com`
+
+Generated 2026-09-25 16:33 UTC by emailspy 1.7.0.
+
+## [INFO] Address
+
+Custom domain (example.com).
+
+| Field | Value |
+| --- | --- |
+| Email | john.doe@example.com |
+| Valid | yes |
+| Possible names | John Doe, Doe John, J. Doe, John D. |
+```
+
+A batch becomes **one Markdown document with a section per address**.
+
+### 🌐 5. HTML — one file you can send or print
+
+`--html` (or a `.html` / `.htm` filename) renders the whole report into a
+**single self-contained document**: inline CSS, **no scripts, no webfonts, no
+network requests** — it opens from a USB stick, forwards as an email attachment
+and prints as a light-mode dossier.
+
+- ✅ Keeps the terminal grammar: status stamps, left-rule panels,
+  right-aligned source provenance, the summary strip, the ethics line
+- ✅ A batch becomes **one file with a section per address**
+- ✅ Honours `--theme`
+- ✅ WCAG AA contrast, visible focus rings, responsive down to phone width
+
+### 📚 Single address vs. batch — what changes
+
+| | 1 address | 2+ addresses (positional or `--batch FILE`) |
+| --- | --- | --- |
+| 🖥️ Rich report | one report | one report each, separated by a blank line |
+| 🤖 JSON | **object** | **array of objects** |
+| 📊 CSV | one block of rows | rows for every address, `email` column first |
+| 📝 Markdown | one document | sections concatenated into one document |
+| 🌐 HTML | one document | one document, `<section>` per address |
+| 📣 Progress | none | `investigating addr (2/10)` on **stderr** |
+
+`--batch FILE` reads one address per line; `#` starts a comment, blank lines
+are ignored, duplicates are dropped, and **every address is validated before
+the first request is sent**.
+
+### 🚪 Exit codes
+
+| Code | Meaning |
+| --- | --- |
+| `0` | ✅ success |
+| `1` | ❌ bad usage, unknown flag/module, invalid address, unreadable batch file |
+| `2` | 💥 runtime failure while investigating an address |
+| `130` | ⏹️ interrupted (Ctrl-C) |
+
+---
+
+## 🗂️ What it collects
+
+| Module | Source | What you get |
+| --- | --- | --- |
+| 🧬 `identity` | offline | address validity, provider, disposable-domain flag, plus-tag, **possible real names**, candidate usernames, Gravatar hashes |
+| 🌐 `dns` | public DNS | MX / NS / A / AAAA, SPF, DMARC, DKIM selectors, BIMI, misconfiguration warnings |
+| 🏛️ `rdap` | RDAP (`rdap.org`) | registrar, registered / expires / last-changed dates, status flags, nameservers, DNSSEC — **only for the address's own domain**, skipped for free-mail providers |
+| 📜 `ct` | certspotter | certificate-transparency **subdomains of the address's own domain**, issuance count, first/last certificate date |
+| 🔎 `hosts` | HackerTarget | hostnames and addresses observed for the address's own domain |
+| 🌍 `urlscan` | urlscan.io | **recent public browser scans of the address's own domain**: scanned page URLs, serving IP, country, HTTP status and scan dates — skipped for free-mail providers |
+| 🖼️ `gravatar` | Gravatar v3 API | display name, location, job title, company, about text, avatar, **verified social accounts linked to the address** |
+| 🔏 `pgp` | keys.openpgp.org | **published OpenPGP key**: fingerprint, user IDs, and the *other* addresses the owner published on the same key (a hit means the address is verified there) |
+| ⌨️ `github` | GitHub commit search | **real name from commit metadata**, linked GitHub login when the address is verified, repositories, first/last seen |
+| 🪪 `accounts` | 9 public profile endpoints | which candidate usernames are registered on GitHub, GitLab, Mastodon, Bluesky, Keybase, Docker Hub, Hacker News, SoundCloud, Linktree |
+| 🗣️ `mentions` | Sourcegraph + Hacker News + Stack Exchange | **where the address itself turns up in public code and discussions**: matching repository files with the line that hit, forum posts with dates, and ready-made search links — runs for free-mail addresses too |
+| 📡 `mailhost` | RIPEstat + Shodan InternetDB | for the address's own mail servers: **ASN holder**, announced prefix, open ports, **known CVE count**, and the hostnames those IPs also serve |
+| 📬 `smtp` | the domain's real mail exchangers | `RCPT TO` verification — *mailbox exists / does not exist / unknown* |
+| 📈 `reputation` | EmailRep *(API key)* | reputation score, first/last seen, deliverability, breach flags, **linked profile list** |
+| 🚨 `breaches` | Have I Been Pwned *(API key)* | breach names, dates, record counts, exposed data classes |
+| 🕸️ `dorks` | none | 23 ready-to-run queries, plus two per candidate name, across Google, Bing, DuckDuckGo, Yandex, GitHub, Reddit, X, VirusTotal, grep.app and platform-specific `site:` dorks |
+
+> 🧠 `rdap`, `ct`, `hosts` and `mailhost` all describe the address's *own* domain
+> and mail servers, so they are skipped **with a stated reason** for free-mail
+> providers — Google's registration record and Google's open ports are not
+> evidence about the person behind `someone@gmail.com`.
+
+---
+
+## 🖥️ Example output
 
 ```
 █████ █   █  ███  █████ █        ████ ████  █   █
@@ -110,54 +293,94 @@ emailspy jane.doe@example.com --open
 ████  █ █ █ █████   █   █        ███  ████    █
 █     █   █ █   █   █   █           █ █       █
 █████ █   █ █   █ █████ █████   ████  █       █
-CASE 5A5F21                                                 2026-09-25 13:16 UTC
-SUBJECT  matt@mullenweg.com
-────────────────────────────────────────────────────────────────────
-  PROVIDER   mullenweg.com          MAILBOX   unknown
-   HANDLES   7 found                  NAMES   Matt Mullenweg
+CASE 33252C                                                 2026-09-25 16:33 UTC
+SUBJECT  m@mullenweg.com
+────────────────────────────────────────────────────────────────────────────────
+    PROVIDER   mullenweg.com           MAILBOX   not checked
+     HANDLES   none found                NAMES   —
 public records only — authorised investigations
 
-│  01  [ INFO  ]  Mail infrastructure                          public DNS
+│  01  [ INFO  ]  Address                                    offline analysis
+│  Custom domain (mullenweg.com).
+│  Email            m@mullenweg.com
+│  Valid            yes
+│  Domain           mullenweg.com
+│  Gravatar MD5     767fc9c115a1b989744c755d…
+
+│  02  [ INFO  ]  Mail infrastructure                              public DNS
 │  no DMARC policy
 │    Priority    Mail exchanger
 │           0    mullenweg.com
+│  SPF             v=spf1 ip4:96.127.182.10 a mx ?all
+│  DKIM selectors  default._domainkey
 
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-│  05  [ FOUND ]  Candidate accounts                   9 profile endpoints │
-│  7 registered handle(s) across 7 platform(s).                        │
-│                                                                      │
-│    Service        Handle    Profile                                  │
-│    Bluesky        @matt     https://bsky.app/profile/matt…           │
-└──────────────────────────────────────────────────────────────────────┘
-Bluesky @matt   https://bsky.app/profile/matt.bsky.social
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+│  11  [ FOUND ]  Public mentions            sourcegraph + hn + stackexchange  │
+│  2 code match(es) · 2 post(s)                                               │
+│    Repository                           File                                 │
+│    github.com/woocommerce/woocommer…    libs/fluxc/src/testFixtures/reso…    │
+│    Source         When          Post                                        │
+│    hacker news    2010-07-09    I believe I won this one. Drop me an         │
+│                                 email at m@mullenweg.com. :)                 │
+│  Code hits  2                                                                │
+│  Posts      2                                                                │
+└──────────────────────────────────────────────────────────────────────────────┘
+Sourcegraph search      https://sourcegraph.com/search?q=context%3Aglobal+m%40m…
 
- 07  skipped     Reputation (EmailRep)  Set EMAILREP_API_KEY to enable…  emailrep.io
-
-────────────────────────────────────────────────────────────────────
-
-FINDINGS 3   SOURCES 9   SKIPPED 2                 CASE 5A5F21    emailspy 1.4.0
+FINDINGS 1   SOURCES 16   SKIPPED 12                CASE 33252C   emailspy 1.7.0
 ```
 
-The header answers the first four questions before you open a block: who owns
-the domain, whether a mailbox exists there, how many handles were found, and
-what the address resolves to as a name. `MAILBOX` reads `exists` / `does not
-exist` / `unknown` / `not checked`, in the colour that means that verdict.
+### 📖 How to read it
 
-Three tiers carry the hierarchy: a **hit** gets a heavy box in stamp colour,
-**info** and **unknown** get a thin left rule, a **skipped** source is a single
-dim line. The `[ FOUND ]` stamp is the only filled element on the screen —
-every other status is outlined text, so the eye lands on what was actually
-found.
-
-The `01`, `02`, … in front of each block is **probe order**, the fixed pipeline
-the tool runs (identity → dns → …), not a ranking. Two things on screen are
-provenance: the **source** right-aligned on every heading (`public DNS`,
-`gravatar.com`, `emailrep.io`), and the subject line split so the third-party
-domain reads in a different colour from the part you supplied.
+- **The header answers the first four questions** before you open a block: who
+  owns the domain, whether a mailbox exists there, how many handles were found,
+  and what the address resolves to as a name. `MAILBOX` reads `exists` /
+  `does not exist` / `unknown` / `not checked`, coloured by verdict.
+- **Three tiers carry the hierarchy**: a **hit** gets a heavy box in stamp
+  colour, **info** and **unknown** get a thin left rule, a **skipped** source is
+  a single dim line. The `[ FOUND ]` stamp is the only filled element on the
+  screen — your eye lands on what was actually found.
+- **`01`, `02`, … is probe order**, the fixed pipeline the tool runs
+  (identity → dns → …), **not** a ranking.
+- **Provenance is always on screen**: the source right-aligned on every heading
+  (`public DNS`, `gravatar.com`, `emailrep.io`), and the subject line split so
+  the third-party domain reads in a different colour from the part you supplied.
 
 ---
 
-## Flags
+## 🎨 Themes
+
+Colour is doing work, not decoration:
+
+| token | `spy` | meaning |
+| --- | --- | --- |
+| signal | `#5AD1C6` | 🗣️ our voice — wordmark, section titles, derived handles |
+| stamp | `#FFB020` | 🟨 a confirmed hit; the only filled background in the report |
+| remote | `#79B8FF` | 🌐 owned by someone else — URLs, hosts, accounts |
+| alert | `#FF6B6B` | ❌ failure, and a rejected recipient |
+| warn | `#FFD166` | 🤷 we could not tell |
+| graphite | `#72808E` | 🏷️ field labels, the neutral `[ INFO ]` status, machine meta |
+
+```bash
+emailspy jane.doe@example.com                 # spy (default)
+emailspy jane.doe@example.com --theme classic # the earlier EMAILSCOPE palette
+emailspy --list-themes
+```
+
+The `spy` wordmark is drawn as block glyphs, 49 columns wide; below 49 columns
+the report falls back to plain text so nothing is ever truncated. `classic`
+prints its `EMAILSCOPE` wordmark as plain text.
+
+Themes live in `src/emailscope/theme.py` — one `Theme` dataclass per entry in
+`THEMES`, plus `banner_rows()`, which decides whether a wordmark can be drawn
+in block glyphs. A theme supplies colours and the wordmark only; layout is
+shared, so both themes stay honest about what a colour means. Add a
+`Theme(...)`, register it in `THEMES`, and `tests/test_theme.py` will pick it
+up.
+
+---
+
+## 🧰 All flags
 
 ```
 usage: emailspy [-h] [--batch FILE] [-o FILE] [--json] [--csv] [--markdown]
@@ -174,9 +397,9 @@ usage: emailspy [-h] [--batch FILE] [-o FILE] [--json] [--csv] [--markdown]
 Investigate an email address: owner identity, linked accounts, mail infrastructure and public footprint.
 ```
 
-| Flag | Effect |
+| 🚩 Flag | Effect |
 | --- | --- |
-| `-o FILE` | write results to a file; `.json` / `.md` / `.csv` choose the format |
+| `-o FILE` | write results to a file; `.json` / `.md` / `.csv` / `.html` choose the format |
 | `--json`, `--markdown`, `--csv`, `--html` | print that format to stdout instead of the rich report; several addresses give a JSON array, concatenated Markdown, one CSV block per address, or a single HTML file with a section per address |
 | `--batch FILE` | read more addresses from FILE, one per line (`#` comments) |
 | `--only M1,M2` | run only the listed modules (see `emailspy --list-modules`) |
@@ -188,56 +411,25 @@ Investigate an email address: owner identity, linked accounts, mail infrastructu
 | `--no-links` / `--link-limit N` | control how many search links are printed (`0` = all) |
 | `--quiet` | hide skipped modules |
 | `--theme {spy,classic}` | colour scheme and wordmark (default `spy`) |
+| `--list-modules` | list the 16 modules and exit |
 | `--list-themes` | show each theme's palette and default |
 | `--no-color` | disable ANSI colour (also respects `NO_COLOR`) |
-
-**Exit codes:** `0` success · `1` bad usage / invalid address · `2` runtime failure · `130` interrupted.
-
----
-
-## Themes
-
-Colour is doing work, not decoration:
-
-| token | `spy` | meaning |
-| --- | --- | --- |
-| signal | `#5AD1C6` | our voice — wordmark, section titles, derived handles |
-| stamp | `#FFB020` | a confirmed hit; the only filled background in the report |
-| remote | `#79B8FF` | owned by someone else — URLs, hosts, accounts |
-| alert | `#FF6B6B` | failure, and a rejected recipient |
-| warn | `#FFD166` | we could not tell |
-| graphite | `#72808E` | field labels, the neutral `[ INFO ]` status, machine meta |
-
-```bash
-emailspy jane.doe@example.com                 # spy (default)
-emailspy jane.doe@example.com --theme classic # the earlier EMAILSCOPE palette
-emailspy --list-themes
-```
-
-The `spy` wordmark is drawn as block glyphs, 49 columns wide; below 49 columns
-the report falls back to plain text so nothing is ever truncated.
-
-Themes live in `src/emailscope/theme.py` — one `Theme` dataclass per entry in
-`THEMES`, plus `banner_rows()`, which decides whether a wordmark can be drawn
-in block glyphs. A theme supplies colours and the wordmark only; layout is
-shared, so both themes stay honest about what a colour means. Add a
-`Theme(...)`, register it in `THEMES`, and `tests/test_theme.py` will pick it
-up.
+| `--version` | print the version and exit |
 
 ---
 
-## Optional API keys
+## 🔑 Optional API keys
 
 Two modules are richer with a key and skip cleanly without one:
 
 ```bash
-export EMAILREP_API_KEY="..."   # reputation, deliverability, linked profiles
-export HIBP_API_KEY="..."       # breach history
+export EMAILREP_API_KEY="..."   # 📈 reputation, deliverability, linked profiles
+export HIBP_API_KEY="..."       # 🚨 breach history
 ```
 
 Get a free key from [EmailRep](https://emailrep.io/) and
 [Have I Been Pwned](https://haveibeenpwned.com/API/Key). Keys are read from the
-environment only — they are never written to reports or logs.
+environment only — they are **never written to reports or logs**.
 
 Unauthenticated quotas are deliberately left alone; EmailRep and HIBP both
 reject anonymous traffic now, so EmailScope reports `SKIPPED` instead of
@@ -245,7 +437,7 @@ hammering them.
 
 ---
 
-## How the account probe works
+## 🔍 How the account probe works
 
 `src/emailscope/data/sites.json` drives it. Each entry is a public,
 unauthenticated endpoint with an explicit exists/missing rule:
@@ -278,30 +470,30 @@ address.** The report says so on every run.
 
 ---
 
-## What this tool will not do
+## 🚫 What this tool will not do
 
-- No password-reset / "forgot password" enumeration — those endpoints exist to
-  be rate-limited, and abusing them is account enumeration, not research.
-- No credential stuffing, no brute force, no scraping behind logins.
-- No search-engine scraping: queries are handed to you as links instead,
+- ❌ No password-reset / "forgot password" enumeration — those endpoints exist
+  to be rate-limited, and abusing them is account enumeration, not research.
+- ❌ No credential stuffing, no brute force, no scraping behind logins.
+- ❌ No search-engine scraping: queries are handed to you as links instead,
   because scraping Google/DDG violates their terms and breaks constantly.
-- No guessing. Where the evidence stops, the report says `unknown`, not
+- ❌ No guessing. Where the evidence stops, the report says `unknown`, not
   `likely`.
 
 ---
 
-## Ethics and legal use
+## ⚖️ Ethics and legal use
 
 EmailScope aggregates **already public** information. That does not make every
 use appropriate.
 
-- Investigate addresses you own, or that you are authorised to look at
+- ✅ Investigate addresses you own, or that you are authorised to look at
   (your own domain, an engagement with written scope, an abuse report you are
   compiling).
-- Do not use it to stalk, harass, dox, profile or discriminate against anyone.
-- Do not use the output as identity proof — a registered username or a commit
+- ❌ Do not use it to stalk, harass, dox, profile or discriminate against anyone.
+- ⚠️ Do not use the output as identity proof — a registered username or a commit
   author name is a lead, not a conclusion.
-- Respect the sites you query. The built-in rate limits exist for a reason;
+- 🤝 Respect the sites you query. The built-in rate limits exist for a reason;
   raise them, don't lower them.
 
 You are responsible for complying with the laws that apply to you (GDPR,
@@ -310,13 +502,49 @@ the tool touches.
 
 ---
 
-## Development
+## ❓ FAQ
+
+**Does it work on Gmail / Outlook / Yahoo addresses?**
+Yes — `identity`, `dns` (of the MX host), `gravatar`, `pgp`, `github`,
+`accounts`, `mentions`, `smtp` and `dorks` all run. The *domain-scoped* modules
+(`rdap`, `ct`, `hosts`, `urlscan`, `mailhost`) skip with a reason: Google's
+registration record is not evidence about you.
+
+**Does it send mail, log in, or touch the mailbox?**
+No. The only mailbox interaction is an `RCPT TO` question to the domain's own
+mail server — the same check any mail server does before accepting a message.
+
+**Will it tell me who an address belongs to?**
+It gives you **evidence, not verdicts**: names recovered from commit metadata,
+registered handles, linked profiles, published keys. What you conclude from
+that is yours to defend — the report deliberately says `unknown` where the
+evidence stops.
+
+**Why is something `skipped` or `unknown`?**
+Because the tool states its limits instead of guessing: no API key (reputation,
+breaches), provider policy (free-mail domain modules), or the network
+refused the request (rate limits, blocked port 25). Each skip line carries the
+reason.
+
+**Can I run it offline?**
+Mostly: `--only identity,dorks` needs no network at all, and `--no-*` flags
+let you cut everything else. DNS lookups still go out unless you skip `dns`.
+
+**Is it fast?**
+Modules run concurrently with retries, backoff and a per-host throttle; a full
+16-module run of one address takes around 15 seconds against a cooperative
+domain, and a `--batch` run reports `n/N` progress on stderr as it goes.
+
+---
+
+## 🛠️ Development
 
 ```bash
 make install     # editable install + dev extras
 make lint        # ruff check + format check
 make test        # pytest
 make check       # lint + test
+make build       # sdist + wheel into dist/
 ```
 
 Tests are offline by design: parsers, classifiers, report rendering and the
@@ -326,7 +554,7 @@ CLI are covered without touching the network. Add live coverage locally with:
 EMAILSCOPE_LIVE=1 pytest -m live
 ```
 
-### Project layout
+### 📂 Project layout
 
 ```
 src/emailscope/
@@ -344,7 +572,7 @@ src/emailscope/
 
 ---
 
-## Known limitations
+## ⚠️ Known limitations
 
 - Unauthenticated GitHub search allows 10 requests/minute; a rate-limited run
   reports `SKIP` rather than failing.
@@ -361,6 +589,8 @@ src/emailscope/
   grep.app sits behind a Vercel bot challenge (429), Reddit returns 403 to
   non-browser clients, and psbdmp does not answer at all.
 
-## License
+---
+
+## 📄 License
 
 MIT — see [LICENSE](LICENSE).
