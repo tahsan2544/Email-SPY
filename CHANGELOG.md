@@ -4,6 +4,22 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-09-25
+
+### Added
+
+- Batch runs: pass several addresses on the command line, or `--batch FILE`
+  (one per line, `#` comments). Addresses are de-duplicated, validated before
+  any request is made, and investigated sequentially with a `n/N` progress line
+  on stderr so `--json`/`--csv` stdout stays parseable.
+- Batch exports: `--json` becomes an array (a single address still returns the
+  same object as before), `--markdown` concatenates one report per address.
+
+### Changed
+
+- CSV export now starts with an `email` column, so a batch triage sheet always
+  says which address a row belongs to.
+
 ## [1.4.0] - 2026-09-25
 
 ### Added

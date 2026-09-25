@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import os
 import sys
 import webbrowser
@@ -59,7 +60,12 @@ def build_parser() -> argparse.ArgumentParser:
         epilog="Public-source research only. Investigate addresses you are authorised to look at.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("email", nargs="?", help="email address to investigate")
+    parser.add_argument("email", nargs="*", help="email address(es) to investigate")
+    parser.add_argument(
+        "--batch",
+        metavar="FILE",
+        help="read more addresses from FILE, one per line (# starts a comment)",
+    )
     parser.add_argument("-o", "--output", metavar="FILE", help="write results to FILE")
     parser.add_argument("--json", action="store_true", help="emit JSON instead of the rich report")
     parser.add_argument(
@@ -203,10 +209,41 @@ def _print_themes(console: Console, theme: Theme) -> None:
     console.print(grid)
 
 
-def _open_links(case: Case, console: Console, theme: Theme, limit: int = OPEN_LIMIT) -> None:
-    """Open the highest-value queries only — 25 tabs is not a feature."""
+def _targets(args: argparse.Namespace) -> list[str]:
+    """Positional addresses plus any lines from ``--batch``, de-duplicated in order."""
+    raw = list(args.email or [])
+    if args.batch:
+        try:
+            text = Path(args.batch).read_text(encoding="utf-8")
+        except OSError as exc:
+            raise ValueError(
+                f"cannot read --batch file {args.batch}: {exc.strerror or exc}"
+            ) from exc
+        for line in text.splitlines():
+            value = line.split("#", 1)[0].strip()
+            if value:
+                raw.append(value)
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for value in raw:
+        if value not in seen:
+            seen.add(value)
+            ordered.append(value)
+    return ordered
+
+
+def _json_payload(cases: list[Case]) -> str:
+    """A single address keeps its object shape; a batch becomes an array."""
+    if len(cases) == 1:
+        return to_json(cases[0])
+    return json.dumps([json.loads(to_json(case)) for case in cases], indent=2, ensure_ascii=False)
+
+
+def _open_links(cases: list[Case], console: Console, theme: Theme, limit: int = OPEN_LIMIT) -> None:
+    """Open the highest-value queries only — 8 tabs, not one per address."""
     candidates = [
         link["url"]
+        for case in cases
         for finding in case.findings
         for link in finding.links
         if link["url"].startswith(("http://", "https://"))
@@ -244,14 +281,23 @@ def main(argv: list[str] | None = None) -> int:
         _print_modules(console, theme)
         return 0
 
-    if not args.email:
-        _error(err, theme, "no email address given. Try: emailscope someone@example.com")
+    try:
+        targets = _targets(args)
+    except ValueError as exc:
+        _error(err, theme, str(exc))
         return 1
 
-    parsed = identity.parse_email(args.email)
-    if not parsed.valid:
-        _error(err, theme, f"not a valid email address: {args.email}")
+    if not targets:
+        _error(err, theme, "no email address given. Try: emailspy someone@example.com")
         return 1
+
+    addresses: list[str] = []
+    for raw in targets:
+        parsed = identity.parse_email(raw)
+        if not parsed.valid:
+            _error(err, theme, f"not a valid email address: {raw}")
+            return 1
+        addresses.append(parsed.email)
 
     if args.output and args.output.endswith(".json"):
         args.json = True
@@ -270,21 +316,25 @@ def main(argv: list[str] | None = None) -> int:
         _error(err, theme, str(exc))
         return 1
 
-    try:
-        case = asyncio.run(run(parsed.email, options))
-    except KeyboardInterrupt:
-        err.print(Text("interrupted", style=theme.warn))
-        return 130
-    except Exception as exc:
-        _error(err, theme, f"{type(exc).__name__}: {exc}")
-        return 2
+    cases: list[Case] = []
+    for index, email in enumerate(addresses, start=1):
+        if len(addresses) > 1:
+            err.print(Text(f"investigating {email} ({index}/{len(addresses)})", style=theme.muted))
+        try:
+            cases.append(asyncio.run(run(email, options)))
+        except KeyboardInterrupt:
+            err.print(Text("interrupted", style=theme.warn))
+            return 130
+        except Exception as exc:
+            _error(err, theme, f"{email}: {type(exc).__name__}: {exc}")
+            return 2
 
     if args.json:
-        payload = to_json(case)
+        payload = _json_payload(cases)
     elif args.markdown:
-        payload = to_markdown(case)
+        payload = "\n\n".join(to_markdown(case) for case in cases)
     elif args.csv:
-        payload = to_csv(case)
+        payload = to_csv(cases)
     else:
         payload = None
 
@@ -296,25 +346,28 @@ def main(argv: list[str] | None = None) -> int:
             sys.stdout.write(payload if payload.endswith("\n") else payload + "\n")
         return 0
 
-    try:
-        render(
-            case,
-            console,
-            theme=theme,
-            show_links=not args.no_links,
-            link_limit=None if args.link_limit == 0 else args.link_limit,
-            quiet=args.quiet,
-            proxy=options.proxy,
-        )
-    except MarkupError:
-        console.print(to_markdown(case))
+    for index, case in enumerate(cases):
+        if index:
+            console.print()
+        try:
+            render(
+                case,
+                console,
+                theme=theme,
+                show_links=not args.no_links,
+                link_limit=None if args.link_limit == 0 else args.link_limit,
+                quiet=args.quiet,
+                proxy=options.proxy,
+            )
+        except MarkupError:
+            console.print(to_markdown(case))
 
     if args.output:
-        _write(args.output, to_json(case))
+        _write(args.output, _json_payload(cases))
         _note(console, theme, "written", f"{args.output} (json)")
 
     if args.open_links:
-        _open_links(case, console, theme)
+        _open_links(cases, console, theme)
 
     return 0
 

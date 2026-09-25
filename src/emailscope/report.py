@@ -678,22 +678,25 @@ def to_json(case: Case) -> str:
     return json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=False)
 
 
-def to_csv(case: Case) -> str:
-    """One row per module — the triage view; nested detail stays in the JSON export."""
+def to_csv(cases: Case | list[Case]) -> str:
+    """One row per module per address — the triage view; detail stays in JSON."""
+    items = [cases] if isinstance(cases, Case) else cases
     buffer = StringIO()
     writer = csv.writer(buffer, lineterminator="\n")
-    writer.writerow(["module", "status", "title", "summary", "source", "links"])
-    for finding in case.findings:
-        writer.writerow(
-            [
-                finding.module,
-                finding.status,
-                finding.title,
-                finding.summary,
-                _MODULE_SOURCES.get(finding.module, finding.module),
-                " ".join(link["url"] for link in finding.links),
-            ]
-        )
+    writer.writerow(["email", "module", "status", "title", "summary", "source", "links"])
+    for case in items:
+        for finding in case.findings:
+            writer.writerow(
+                [
+                    case.email,
+                    finding.module,
+                    finding.status,
+                    finding.title,
+                    finding.summary,
+                    _MODULE_SOURCES.get(finding.module, finding.module),
+                    " ".join(link["url"] for link in finding.links),
+                ]
+            )
     return buffer.getvalue()
 
 

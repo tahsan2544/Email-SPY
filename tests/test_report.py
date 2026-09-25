@@ -131,9 +131,9 @@ def test_csv_has_one_row_per_module_and_quotes_commas():
         )
     )
     lines = to_csv(case).splitlines()
-    assert lines[0] == "module,status,title,summary,source,links"
+    assert lines[0] == "email,module,status,title,summary,source,links"
     assert len(lines) == len(case.findings) + 1
-    hosts_row = next(line for line in lines if line.startswith("hosts,"))
+    hosts_row = next(line for line in lines if line.startswith("john.doe@example.com,hosts,"))
     assert '"No hostnames returned for example.com, 0 address(es)."' in hosts_row
     assert "hackertarget" in hosts_row
 

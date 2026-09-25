@@ -85,8 +85,11 @@ emailspy jane.doe@example.com --only dns,rdap,smtp
 # route every request through Tor
 emailspy jane.doe@example.com --proxy socks5h://127.0.0.1:9150
 
-# triage table for a spreadsheet
-emailspy jane.doe@example.com --csv -o triage.csv
+# several addresses at once (progress goes to stderr, output stays clean)
+emailspy a@example.com b@example.org --only dns,smtp
+
+# a whole roster from a file
+emailspy --batch roster.txt --csv -o triage.csv
 
 # offline only — no packets leave your machine except DNS
 emailspy jane.doe@example.com --no-accounts --no-smtp --no-gravatar --no-github
@@ -153,7 +156,7 @@ domain reads in a different colour from the part you supplied.
 ## Flags
 
 ```
-usage: emailspy [-h] [-o FILE] [--json] [--csv] [--markdown]
+usage: emailspy [-h] [--batch FILE] [-o FILE] [--json] [--csv] [--markdown]
                 [--timeout TIMEOUT] [--rate-limit SECONDS] [--open]
                 [--no-links] [--link-limit N] [--quiet] [--no-color]
                 [--list-modules] [--theme {classic,spy}] [--only MODULES]
@@ -162,7 +165,7 @@ usage: emailspy [-h] [-o FILE] [--json] [--csv] [--markdown]
                 [--no-gravatar] [--no-pgp] [--no-github] [--no-accounts]
                 [--no-mailhost] [--no-smtp] [--no-reputation] [--no-breaches]
                 [--no-dorks]
-                [email]
+                [email ...]
 
 Investigate an email address: owner identity, linked accounts, mail infrastructure and public footprint.
 ```
@@ -170,7 +173,8 @@ Investigate an email address: owner identity, linked accounts, mail infrastructu
 | Flag | Effect |
 | --- | --- |
 | `-o FILE` | write results to a file; `.json` / `.md` / `.csv` choose the format |
-| `--json`, `--markdown`, `--csv` | print that format to stdout instead of the rich report |
+| `--json`, `--markdown`, `--csv` | print that format to stdout instead of the rich report; several addresses give a JSON array, concatenated Markdown, or one CSV block per address |
+| `--batch FILE` | read more addresses from FILE, one per line (`#` comments) |
 | `--only M1,M2` | run only the listed modules (see `emailspy --list-modules`) |
 | `--proxy URL` | route every request through a proxy — `socks5h://127.0.0.1:9150` for Tor, `http://127.0.0.1:8080` for a local forwarder |
 | `--no-<module>` | skip one module (see `emailspy --list-modules`) |

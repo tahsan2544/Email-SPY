@@ -76,9 +76,36 @@ def test_csv_output_written_to_file(tmp_path, capsys):
     code = main(["john.doe@example.com", "-o", str(target), "--only", "identity"])
     assert code == 0
     rows = target.read_text().splitlines()
-    assert rows[0] == "module,status,title,summary,source,links"
-    assert any(row.startswith("identity,info,") for row in rows)
+    assert rows[0] == "email,module,status,title,summary,source,links"
+    assert any(row.startswith("john.doe@example.com,identity,info,") for row in rows)
     assert "written" in capsys.readouterr().out
+
+
+def test_multiple_addresses_emit_a_json_array(capsys):
+    code = main(["john.doe@example.com", "jane@example.org", "--only", "identity", "--json"])
+    assert code == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert [case["email"] for case in payload] == ["john.doe@example.com", "jane@example.org"]
+    assert all(case["findings"][0]["module"] == "identity" for case in payload)
+
+
+def test_batch_file_supplies_addresses_and_skips_comments(tmp_path, capsys):
+    batch = tmp_path / "roster.txt"
+    batch.write_text("# targets for this run\njane@example.org\n\n# end\n")
+    code = main(["john.doe@example.com", "--batch", str(batch), "--only", "identity", "--json"])
+    assert code == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert [case["email"] for case in payload] == ["john.doe@example.com", "jane@example.org"]
+
+
+def test_invalid_address_in_a_batch_is_reported(capsys):
+    assert main(["john.doe@example.com", "not-an-email", "--json"]) == 1
+    assert "not a valid email address: not-an-email" in capsys.readouterr().err
+
+
+def test_missing_batch_file_is_a_usage_error(capsys):
+    assert main(["--batch", "/nonexistent/roster.txt"]) == 1
+    assert "cannot read --batch file" in capsys.readouterr().err
 
 
 def test_version_flag():
