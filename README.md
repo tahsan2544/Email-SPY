@@ -34,6 +34,7 @@ No accounts are created, no credentials are guessed, nothing is brute-forced.
 | `pgp` | keys.openpgp.org | **published OpenPGP key**: fingerprint, user IDs, and the *other* addresses the owner published on the same key (a hit means the address is verified there) |
 | `github` | GitHub commit search | **real name from commit metadata**, linked GitHub login when the address is verified, repositories, first/last seen |
 | `accounts` | 9 public profile endpoints | which candidate usernames are registered on GitHub, GitLab, Mastodon, Bluesky, Keybase, Docker Hub, Hacker News, SoundCloud, Linktree |
+| `mentions` | Sourcegraph + Hacker News + Stack Exchange | **where the address itself turns up in public code and discussions**: matching repository files with the line that hit, forum posts with dates, and ready-made search links — runs for free-mail addresses too |
 | `mailhost` | RIPEstat + Shodan InternetDB | for the address's own mail servers: **ASN holder**, announced prefix, open ports, **known CVE count**, and the hostnames those IPs also serve |
 | `smtp` | the domain's real mail exchangers | `RCPT TO` verification — *mailbox exists / does not exist / unknown* |
 | `reputation` | EmailRep *(API key)* | reputation score, first/last seen, deliverability, breach flags, **linked profile list** |
@@ -162,9 +163,9 @@ usage: emailspy [-h] [--batch FILE] [-o FILE] [--json] [--csv] [--markdown]
                 [--list-modules] [--theme {classic,spy}] [--only MODULES]
                 [--proxy URL] [--list-themes] [--version] [--no-identity]
                 [--no-dns] [--no-rdap] [--no-ct] [--no-hosts] [--no-urlscan]
-                [--no-gravatar] [--no-pgp] [--no-github] [--no-accounts]
-                [--no-mailhost] [--no-smtp] [--no-reputation] [--no-breaches]
-                [--no-dorks]
+                [--no-gravatar] [--no-pgp] [--no-github] [--no-mentions]
+                [--no-accounts] [--no-mailhost] [--no-smtp] [--no-reputation]
+                [--no-breaches] [--no-dorks]
                 [email ...]
 
 Investigate an email address: owner identity, linked accounts, mail infrastructure and public footprint.
@@ -352,6 +353,9 @@ src/emailscope/
 - Archive indexes were tested and left out: the Wayback CDX API answers in
   3–60s (sometimes 503) and Common Crawl in 10s+, which is not acceptable
   latency for a module that also has to stay polite about rate limits.
+- Text-search sources were tested live and rejected for the same reason:
+  grep.app sits behind a Vercel bot challenge (429), Reddit returns 403 to
+  non-browser clients, and psbdmp does not answer at all.
 
 ## License
 

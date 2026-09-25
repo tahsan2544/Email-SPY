@@ -20,6 +20,7 @@ class Options:
     smtp: bool = True
     gravatar: bool = True
     github: bool = True
+    mentions: bool = True
     dns: bool = True
     dorks: bool = True
     pgp: bool = True

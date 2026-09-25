@@ -4,6 +4,24 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-09-25
+
+### Added
+
+- `mentions` module: where the **address itself** appears in public text —
+  Sourcegraph code search (repository, file and the matching line), Hacker News
+  stories and comments, and Stack Exchange questions. Five samples per source
+  with dates, plus ready-made search links for all three. Unlike the domain
+  modules it runs for free-mail addresses too, and reports `info` honestly when
+  nothing public matches.
+- Forum and Q&A bodies arrive as HTML; markup and entities are now stripped
+  before rendering so hits read as sentences.
+
+### Notes
+
+- Sources tested live and rejected: grep.app (Vercel bot challenge, 429),
+  Reddit (403 to non-browser clients), psbdmp (does not answer).
+
 ## [1.5.0] - 2026-09-25
 
 ### Added

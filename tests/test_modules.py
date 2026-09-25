@@ -8,6 +8,7 @@ from emailscope.modules.dorks import build_links
 from emailscope.modules.handle_probe import build_url, classify, load_sites
 from emailscope.modules.hosts import parse_hostsearch
 from emailscope.modules.mailhost import parse_as_overview, parse_internetdb, parse_network_info
+from emailscope.modules.mentions import clean_text, parse_hn, parse_sourcegraph, parse_stackexchange
 from emailscope.modules.pgp import parse_key
 from emailscope.modules.rdap import parse_rdap
 from emailscope.modules.urlscan import parse_search
@@ -243,6 +244,185 @@ def test_urlscan_skips_free_mail_providers():
     assert "gmail.com" in finding.summary
 
 
+SSE_STREAM = "\n".join(
+    [
+        "event: filters",
+        'data: [{"value":"archived:yes","label":"Include archived repos"}]',
+        "",
+        "event: progress",
+        'data: {"done":false,"matchCount":1}',
+        "",
+        "event: matches",
+        'data: [{"repository":"github.com/acme/tool","path":"src/mail.py",'
+        '"lineMatches":[{"preview":"owner = \'user@example.com\'"}]},'
+        '{"path":"orphan.py"}]',
+        "",
+        "event: matches",
+        'data: [{"repository":"gitlab.com/acme/other","path":"cfg.txt","lineMatches":[]}]',
+        "",
+        "event: done",
+        'data: {"done":true,"matchCount":2}',
+        "",
+    ]
+)
+
+
+def test_parse_sourcegraph_reads_only_matches_events():
+    hits = parse_sourcegraph(SSE_STREAM)
+    assert len(hits) == 2
+    assert hits[0]["repository"] == "github.com/acme/tool"
+    assert hits[0]["path"] == "src/mail.py"
+    assert hits[0]["url"] == "https://sourcegraph.com/github.com/acme/tool/-/blob/src/mail.py"
+    assert hits[0]["text"] == "owner = 'user@example.com'"
+    assert hits[1]["url"] == "https://sourcegraph.com/gitlab.com/acme/other/-/blob/cfg.txt"
+    assert hits[1]["text"] == ""
+
+
+def test_parse_sourcegraph_caps_results_and_ignores_garbage():
+    payload = (
+        "["
+        + ",".join(f'{{"repository":"github.com/acme/r{i}","path":"f{i}.py"}}' for i in range(9))
+        + "]"
+    )
+    stream = f"event: matches\ndata: {payload}\n"
+    assert len(parse_sourcegraph(stream)) == 5
+    assert parse_sourcegraph("event: matches\ndata: not json\n") == []
+    assert parse_sourcegraph("event: matches\ndata: {}\n") == []
+
+
+def test_clean_text_strips_markup_and_collapses_whitespace():
+    assert clean_text("<p>mail me &quot;now&quot;&#x2F;ok</p>") == 'mail me "now"/ok'
+    assert clean_text("  spaced\n\n out ") == "spaced out"
+    assert clean_text("") == ""
+
+
+def test_parse_hn_prefers_titles_and_falls_back_to_comments():
+    hits = parse_hn(
+        {
+            "hits": [
+                {
+                    "title": "We shipped it",
+                    "url": "https://example.com/post",
+                    "objectID": "11",
+                    "created_at": "2024-01-02T03:04:05.000Z",
+                },
+                {
+                    "comment_text": "email me at user@example.com",
+                    "objectID": "42",
+                    "created_at": "2024-05-06T00:00:00.000Z",
+                },
+                {"created_at": "2024-05-06T00:00:00.000Z"},
+            ]
+        }
+    )
+    assert len(hits) == 2
+    assert hits[0]["title"] == "We shipped it"
+    assert hits[0]["url"] == "https://example.com/post"
+    assert hits[0]["date"] == "2024-01-02"
+    assert hits[1]["title"] == "email me at user@example.com"
+    assert hits[1]["url"] == "https://news.ycombinator.com/item?id=42"
+    assert hits[1]["source"] == "hacker news"
+
+
+def test_parse_stackexchange_reads_questions_with_dates():
+    hits = parse_stackexchange(
+        {
+            "items": [
+                {
+                    "title": "How do I verify an address?",
+                    "link": "https://stackoverflow.com/q/1",
+                    "creation_date": 1700000000,
+                },
+                {"title": "no link"},
+                {"title": "No date", "link": "https://stackoverflow.com/q/2"},
+            ]
+        }
+    )
+    assert len(hits) == 2
+    assert hits[0]["date"] == "2023-11-14"
+    assert hits[0]["source"] == "stack exchange"
+    assert hits[1]["date"] == ""
+
+
+class _ScriptedClient:
+    """Replays canned responses for the mentions sources, keyed by host."""
+
+    def __init__(self, responses: dict[str, object]):
+        self.responses = responses
+
+    async def get(self, url: str, **kwargs):
+        for host, response in self.responses.items():
+            if host in url:
+                if isinstance(response, Exception):
+                    raise response
+                return response
+        raise AssertionError(f"unexpected url {url}")
+
+
+def _mentions_context(client):
+    from emailscope.context import Context, Options
+    from emailscope.modules import identity as identity_module
+
+    parsed = identity_module.parse_email("user@example.com")
+    return Context(email=parsed.email, identity=parsed, client=client, options=Options())
+
+
+def test_mentions_collect_reports_hits_and_search_links():
+    import asyncio
+
+    from emailscope.modules import mentions
+
+    client = _ScriptedClient(
+        {
+            "sourcegraph": httpx.Response(200, text=SSE_STREAM),
+            "hn.algolia.com": httpx.Response(
+                200, json={"hits": [{"title": "Hello", "objectID": "7"}]}
+            ),
+            "stackexchange": httpx.Response(
+                200,
+                json={
+                    "items": [
+                        {
+                            "title": "Question",
+                            "link": "https://stackoverflow.com/q/9",
+                            "creation_date": 1700000000,
+                        }
+                    ]
+                },
+            ),
+        }
+    )
+    finding = asyncio.run(mentions.collect(_mentions_context(client)))
+    assert finding.status == "hit"
+    assert finding.data["code_count"] == 2
+    assert finding.data["post_count"] == 2
+    assert finding.summary == "2 code match(es) · 2 post(s)"
+    labels = [link["label"] for link in finding.links]
+    assert labels == ["Sourcegraph search", "Hacker News search", "Stack Overflow search"]
+    assert all("user%40example.com" in link["url"] for link in finding.links)
+
+
+def test_mentions_collect_is_unknown_when_every_source_fails():
+    import asyncio
+
+    from emailscope.modules import mentions
+
+    request = httpx.Request("GET", "https://example.com")
+    client = _ScriptedClient(
+        {
+            "sourcegraph": httpx.ConnectError("boom", request=request),
+            "hn.algolia.com": httpx.ConnectError("boom", request=request),
+            "stackexchange": httpx.ConnectError("boom", request=request),
+        }
+    )
+    finding = asyncio.run(mentions.collect(_mentions_context(client)))
+    assert finding.status == "unknown"
+    assert "Sourcegraph" in finding.summary
+    assert "Hacker News" in finding.summary
+    assert "Stack Exchange" in finding.summary
+    assert finding.data["errors"] and len(finding.data["errors"]) == 3
+
+
 def test_every_module_is_registered_in_the_cli_and_report():
     from emailscope.cli import MODULES
     from emailscope.context import Options
@@ -275,6 +455,7 @@ def _collectors():
         hosts,
         identity,
         mailhost,
+        mentions,
         pgp,
         rdap,
         reputation,
@@ -292,6 +473,7 @@ def _collectors():
         "gravatar": gravatar.collect,
         "pgp": pgp.collect,
         "github": github.collect,
+        "mentions": mentions.collect,
         "accounts": handle_probe.collect,
         "mailhost": mailhost.collect,
         "smtp": smtp_verify.collect,

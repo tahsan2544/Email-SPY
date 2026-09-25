@@ -33,6 +33,7 @@ MODULES = {
     "gravatar": "Public Gravatar profile and linked verified accounts",
     "pgp": "OpenPGP key published for the address (keys.openpgp.org)",
     "github": "Public commits signed with the address (name + login)",
+    "mentions": "The address itself in public code and forums (Sourcegraph, HN, Stack Exchange)",
     "accounts": "Candidate usernames probed against public profile endpoints",
     "mailhost": "ASN, open ports and CVEs on the mail servers (RIPE + Shodan)",
     "smtp": "RCPT TO verification against the real mail exchangers",

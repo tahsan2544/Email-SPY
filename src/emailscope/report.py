@@ -53,6 +53,8 @@ _LABEL_OVERRIDES = {
     "mx": "MX",
     "ns": "NS",
     "scan_count": "Scans",
+    "code_count": "Code hits",
+    "post_count": "Posts",
 }
 
 _SCALAR_KEYS = (
@@ -95,6 +97,8 @@ _SCALAR_KEYS = (
     "requires",
     "rate_limited",
     "scan_count",
+    "code_count",
+    "post_count",
 )
 
 _SKIP_ROW_KEYS = {
@@ -107,6 +111,8 @@ _SKIP_ROW_KEYS = {
     "txt",
     "mx",
     "pages",
+    "code_matches",
+    "post_matches",
 }
 
 # A border with a vertical rule on the left and nothing else; the blank top and
@@ -127,6 +133,7 @@ _MODULE_SOURCES = {
     "gravatar": "gravatar.com",
     "pgp": "keys.openpgp.org",
     "github": "github.com",
+    "mentions": "sourcegraph + hn + stackexchange",
     "accounts": "9 profile endpoints",
     "mailhost": "ripe.net + shodan.io",
     "smtp": "mail exchangers",
@@ -633,6 +640,40 @@ class Reporter:
             )
         return table
 
+    def _render_mentions(self, finding: Finding):
+        code = finding.data.get("code_matches") or []
+        posts = finding.data.get("post_matches") or []
+        if not code and not posts:
+            return None
+        theme = self.theme
+        blocks: list[Any] = []
+        if code:
+            table = Table(
+                show_header=True, header_style=f"bold {theme.graphite}", box=None, padding=(0, 2)
+            )
+            table.add_column("Repository", style=theme.remote, max_width=34, overflow="ellipsis")
+            table.add_column("File", style=theme.ink, overflow="ellipsis")
+            for match in code:
+                table.add_row(match.get("repository", ""), match.get("path", ""))
+            blocks.append(table)
+        if posts:
+            if blocks:
+                blocks.append(Text(""))
+            table = Table(
+                show_header=True, header_style=f"bold {theme.graphite}", box=None, padding=(0, 2)
+            )
+            table.add_column("Source", style=theme.graphite, no_wrap=True)
+            table.add_column("When", style=theme.graphite, no_wrap=True)
+            table.add_column("Post", style=theme.ink, overflow="ellipsis")
+            for post in posts:
+                table.add_row(
+                    post.get("source", ""),
+                    post.get("date") or "—",
+                    post.get("title", ""),
+                )
+            blocks.append(table)
+        return Group(*blocks)
+
 
 _CUSTOM_RENDERERS = {
     "dns": Reporter._render_dns,
@@ -642,6 +683,7 @@ _CUSTOM_RENDERERS = {
     "breaches": Reporter._render_breaches,
     "smtp": Reporter._render_smtp,
     "urlscan": Reporter._render_urlscan,
+    "mentions": Reporter._render_mentions,
 }
 
 

@@ -12,6 +12,7 @@ __all__ = [
     "gravatar",
     "handle_probe",
     "identity",
+    "mentions",
     "reputation",
     "smtp_verify",
     "urlscan",
