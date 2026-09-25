@@ -14,4 +14,5 @@ __all__ = [
     "identity",
     "reputation",
     "smtp_verify",
+    "urlscan",
 ]

@@ -1,4 +1,4 @@
-"""Rendering: rich terminal report, plus JSON and Markdown exports.
+"""Rendering: rich terminal report, plus JSON, Markdown and CSV exports.
 
 Layout is fixed; the palette and wordmark come from a :class:`~emailscope.theme.Theme`.
 Three tiers carry the hierarchy instead of a grid of identical boxes:
@@ -10,10 +10,12 @@ Three tiers carry the hierarchy instead of a grid of identical boxes:
 
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
 import re
 from datetime import UTC, datetime
+from io import StringIO
 from typing import Any
 
 from rich import box as boxes
@@ -50,6 +52,7 @@ _LABEL_OVERRIDES = {
     "extra_names": "Observed names",
     "mx": "MX",
     "ns": "NS",
+    "scan_count": "Scans",
 }
 
 _SCALAR_KEYS = (
@@ -91,6 +94,7 @@ _SCALAR_KEYS = (
     "extra_names",
     "requires",
     "rate_limited",
+    "scan_count",
 )
 
 _SKIP_ROW_KEYS = {
@@ -102,6 +106,7 @@ _SKIP_ROW_KEYS = {
     "dkim",
     "txt",
     "mx",
+    "pages",
 }
 
 # A border with a vertical rule on the left and nothing else; the blank top and
@@ -118,6 +123,7 @@ _MODULE_SOURCES = {
     "rdap": "rdap.org",
     "ct": "certspotter",
     "hosts": "hackertarget",
+    "urlscan": "urlscan.io",
     "gravatar": "gravatar.com",
     "pgp": "keys.openpgp.org",
     "github": "github.com",
@@ -604,6 +610,29 @@ class Reporter:
             )
         return table
 
+    def _render_urlscan(self, finding: Finding):
+        pages = finding.data.get("pages") or []
+        if not pages:
+            return None
+        theme = self.theme
+        table = Table(
+            show_header=True, header_style=f"bold {theme.graphite}", box=None, padding=(0, 2)
+        )
+        table.add_column("Scanned", style=theme.graphite, no_wrap=True)
+        table.add_column("Page", style=theme.remote, max_width=44, overflow="ellipsis")
+        table.add_column("IP", style=theme.ink, no_wrap=True)
+        table.add_column("Geo", style=theme.ink, no_wrap=True)
+        table.add_column("HTTP", justify="right", no_wrap=True)
+        for page in pages:
+            table.add_row(
+                page.get("scanned", ""),
+                page.get("url", ""),
+                page.get("ip", ""),
+                page.get("country", ""),
+                page.get("status", ""),
+            )
+        return table
+
 
 _CUSTOM_RENDERERS = {
     "dns": Reporter._render_dns,
@@ -612,6 +641,7 @@ _CUSTOM_RENDERERS = {
     "accounts": Reporter._render_accounts,
     "breaches": Reporter._render_breaches,
     "smtp": Reporter._render_smtp,
+    "urlscan": Reporter._render_urlscan,
 }
 
 
@@ -646,6 +676,25 @@ def to_json(case: Case) -> str:
         **case.to_dict(),
     }
     return json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=False)
+
+
+def to_csv(case: Case) -> str:
+    """One row per module — the triage view; nested detail stays in the JSON export."""
+    buffer = StringIO()
+    writer = csv.writer(buffer, lineterminator="\n")
+    writer.writerow(["module", "status", "title", "summary", "source", "links"])
+    for finding in case.findings:
+        writer.writerow(
+            [
+                finding.module,
+                finding.status,
+                finding.title,
+                finding.summary,
+                _MODULE_SOURCES.get(finding.module, finding.module),
+                " ".join(link["url"] for link in finding.links),
+            ]
+        )
+    return buffer.getvalue()
 
 
 def _md_escape(value: Any) -> str:

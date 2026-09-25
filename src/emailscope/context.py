@@ -27,6 +27,7 @@ class Options:
     ct: bool = True
     hosts: bool = True
     mailhost: bool = True
+    urlscan: bool = True
     reputation: bool = True
     breaches: bool = True
     open_links: bool = False

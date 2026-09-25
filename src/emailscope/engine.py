@@ -27,6 +27,7 @@ from emailscope.modules import (
     rdap,
     reputation,
     smtp_verify,
+    urlscan,
 )
 
 Collector = Callable[[Context], Awaitable[Finding]]
@@ -38,6 +39,7 @@ PHASE_ONE: list[tuple[str, Collector]] = [
     ("rdap", rdap.collect),
     ("ct", ct.collect),
     ("hosts", hosts.collect),
+    ("urlscan", urlscan.collect),
     ("gravatar", gravatar.collect),
     ("pgp", pgp.collect),
     ("github", github.collect),

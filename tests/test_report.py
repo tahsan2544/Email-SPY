@@ -7,7 +7,7 @@ from rich.console import Console
 from emailscope import __version__
 from emailscope.models import Case, Finding
 from emailscope.modules.dns_intel import _parse_mx
-from emailscope.report import render, to_json, to_markdown
+from emailscope.report import render, to_csv, to_json, to_markdown
 
 
 def make_case() -> Case:
@@ -117,6 +117,60 @@ def test_header_states_the_egress_proxy():
     assert "EGRESS" in output
     assert "socks5h://127.0.0.1:9150" in output
     assert output.index("EGRESS") < output.index("public records only")
+
+
+def test_csv_has_one_row_per_module_and_quotes_commas():
+    case = make_case()
+    case.add(
+        Finding(
+            module="hosts",
+            title="Observed hosts",
+            status="info",
+            summary="No hostnames returned for example.com, 0 address(es).",
+            data={"hosts": [], "addresses": [], "error": ""},
+        )
+    )
+    lines = to_csv(case).splitlines()
+    assert lines[0] == "module,status,title,summary,source,links"
+    assert len(lines) == len(case.findings) + 1
+    hosts_row = next(line for line in lines if line.startswith("hosts,"))
+    assert '"No hostnames returned for example.com, 0 address(es)."' in hosts_row
+    assert "hackertarget" in hosts_row
+
+
+def test_urlscan_renders_a_table_instead_of_raw_dicts():
+    case = Case(email="matt@wordpress.org")
+    case.add(
+        Finding(
+            module="urlscan",
+            title="urlscan pages",
+            status="hit",
+            summary="42 scan(s) · 1 host(s) observed",
+            data={
+                "scan_count": 42,
+                "pages": [
+                    {
+                        "url": "https://shop.example.com/",
+                        "domain": "shop.example.com",
+                        "ip": "203.0.113.9",
+                        "country": "DE",
+                        "status": "200",
+                        "scanned": "2026-09-25",
+                    }
+                ],
+                "hosts": ["shop.example.com"],
+            },
+        )
+    )
+    console = Console(file=StringIO(), width=120, color_system=None)
+    render(case, console, show_links=False)
+    output = console.file.getvalue()
+    assert "https://shop.example.com/" in output
+    assert "203.0.113.9" in output
+    assert "2026-09-25" in output
+    assert "Scans" in output
+    assert "{'url'" not in output
+    assert "urlscan.io" in output
 
 
 def _column(text: str, needle: str) -> int:

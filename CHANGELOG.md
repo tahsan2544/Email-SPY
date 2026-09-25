@@ -4,6 +4,28 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-09-25
+
+### Added
+
+- `--proxy URL` — route every request through an HTTP(S) or SOCKS proxy
+  (`socks5h://127.0.0.1:9150` for Tor, `http://127.0.0.1:8080` for a local
+  forwarder). `httpx[socks]` is now a declared dependency, and the chosen
+  egress is printed in the report header as `EGRESS`.
+- `--only M1,M2` — run just the named modules; an explicit `--no-<module>`
+  still wins when both are given, and unknown names are a usage error.
+- `urlscan` module: recent public browser scans of the address's own domain —
+  scanned page URL, serving IP, country, HTTP status and scan date. Skipped
+  for free-mail providers, like the other domain modules.
+- `--csv` export (and `.csv` output files): one row per module for spreadsheet
+  triage; nested detail stays in the JSON export.
+
+### Notes
+
+- Archive indexes were evaluated and deliberately left out: the Wayback CDX
+  API answers in 3–60s and Common Crawl in 10s+, often with 503/504, which is
+  not acceptable latency for a default module.
+
 ## [1.3.0] - 2026-09-25
 
 ### Added

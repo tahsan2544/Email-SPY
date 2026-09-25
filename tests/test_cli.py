@@ -67,6 +67,18 @@ def test_invalid_email_is_rejected_before_any_lookup(capsys):
 
 def test_conflicting_output_flags(capsys):
     assert main(["user@example.com", "--json", "--markdown"]) == 1
+    assert main(["user@example.com", "--json", "--csv"]) == 1
+    assert "only one of --json" in capsys.readouterr().err
+
+
+def test_csv_output_written_to_file(tmp_path, capsys):
+    target = tmp_path / "triage.csv"
+    code = main(["john.doe@example.com", "-o", str(target), "--only", "identity"])
+    assert code == 0
+    rows = target.read_text().splitlines()
+    assert rows[0] == "module,status,title,summary,source,links"
+    assert any(row.startswith("identity,info,") for row in rows)
+    assert "written" in capsys.readouterr().out
 
 
 def test_version_flag():

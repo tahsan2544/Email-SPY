@@ -29,6 +29,7 @@ No accounts are created, no credentials are guessed, nothing is brute-forced.
 | `rdap` | RDAP (`rdap.org`) | registrar, registered / expires / last-changed dates, status flags, nameservers, DNSSEC — **only for the address's own domain**, skipped for free-mail providers |
 | `ct` | certspotter | certificate-transparency **subdomains of the address's own domain**, issuance count, first/last certificate date |
 | `hosts` | HackerTarget | hostnames and addresses observed for the address's own domain |
+| `urlscan` | urlscan.io | **recent public browser scans of the address's own domain**: scanned page URLs, serving IP, country, HTTP status and scan dates — skipped for free-mail providers |
 | `gravatar` | Gravatar v3 API | display name, location, job title, company, about text, avatar, **verified social accounts linked to the address** |
 | `pgp` | keys.openpgp.org | **published OpenPGP key**: fingerprint, user IDs, and the *other* addresses the owner published on the same key (a hit means the address is verified there) |
 | `github` | GitHub commit search | **real name from commit metadata**, linked GitHub login when the address is verified, repositories, first/last seen |
@@ -78,6 +79,15 @@ emailspy jane.doe@example.com
 emailspy jane.doe@example.com --json -o report.json
 emailspy jane.doe@example.com --markdown -o report.md
 
+# only the modules you care about
+emailspy jane.doe@example.com --only dns,rdap,smtp
+
+# route every request through Tor
+emailspy jane.doe@example.com --proxy socks5h://127.0.0.1:9150
+
+# triage table for a spreadsheet
+emailspy jane.doe@example.com --csv -o triage.csv
+
 # offline only — no packets leave your machine except DNS
 emailspy jane.doe@example.com --no-accounts --no-smtp --no-gravatar --no-github
 
@@ -118,7 +128,7 @@ Bluesky @matt   https://bsky.app/profile/matt.bsky.social
 
 ────────────────────────────────────────────────────────────────────
 
-FINDINGS 3   SOURCES 9   SKIPPED 2                 CASE 5A5F21    emailspy 1.1.0
+FINDINGS 3   SOURCES 9   SKIPPED 2                 CASE 5A5F21    emailspy 1.4.0
 ```
 
 The header answers the first four questions before you open a block: who owns
@@ -143,21 +153,26 @@ domain reads in a different colour from the part you supplied.
 ## Flags
 
 ```
-usage: emailspy [-h] [-o FILE] [--json] [--markdown] [--timeout TIMEOUT]
-                [--rate-limit SECONDS] [--open] [--no-links] [--link-limit N]
-                [--quiet] [--no-color] [--list-modules]
-                [--theme {classic,spy}] [--list-themes] [--version]
-                [--no-identity] [--no-dns] [--no-rdap] [--no-ct] [--no-hosts]
+usage: emailspy [-h] [-o FILE] [--json] [--csv] [--markdown]
+                [--timeout TIMEOUT] [--rate-limit SECONDS] [--open]
+                [--no-links] [--link-limit N] [--quiet] [--no-color]
+                [--list-modules] [--theme {classic,spy}] [--only MODULES]
+                [--proxy URL] [--list-themes] [--version] [--no-identity]
+                [--no-dns] [--no-rdap] [--no-ct] [--no-hosts] [--no-urlscan]
                 [--no-gravatar] [--no-pgp] [--no-github] [--no-accounts]
                 [--no-mailhost] [--no-smtp] [--no-reputation] [--no-breaches]
                 [--no-dorks]
                 [email]
+
+Investigate an email address: owner identity, linked accounts, mail infrastructure and public footprint.
 ```
 
 | Flag | Effect |
 | --- | --- |
-| `-o FILE` | write results to a file; `.json` / `.md` choose the format |
-| `--json`, `--markdown` | print that format to stdout instead of the rich report |
+| `-o FILE` | write results to a file; `.json` / `.md` / `.csv` choose the format |
+| `--json`, `--markdown`, `--csv` | print that format to stdout instead of the rich report |
+| `--only M1,M2` | run only the listed modules (see `emailspy --list-modules`) |
+| `--proxy URL` | route every request through a proxy — `socks5h://127.0.0.1:9150` for Tor, `http://127.0.0.1:8080` for a local forwarder |
 | `--no-<module>` | skip one module (see `emailspy --list-modules`) |
 | `--timeout N` | per-request timeout, seconds (default `12`) |
 | `--rate-limit S` | minimum delay between requests to the same host |
@@ -330,6 +345,9 @@ src/emailscope/
 - Provider and disposable-domain lists are curated, not exhaustive.
 - Consumer platforms (Instagram, X, TikTok, Facebook) expose no usable
   unauthenticated API; use the generated `site:` dorks for those.
+- Archive indexes were tested and left out: the Wayback CDX API answers in
+  3–60s (sometimes 503) and Common Crawl in 10s+, which is not acceptable
+  latency for a module that also has to stay polite about rate limits.
 
 ## License
 

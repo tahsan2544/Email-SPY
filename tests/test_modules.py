@@ -10,6 +10,7 @@ from emailscope.modules.hosts import parse_hostsearch
 from emailscope.modules.mailhost import parse_as_overview, parse_internetdb, parse_network_info
 from emailscope.modules.pgp import parse_key
 from emailscope.modules.rdap import parse_rdap
+from emailscope.modules.urlscan import parse_search
 
 
 def test_sites_json_is_well_formed():
@@ -201,6 +202,47 @@ def test_parse_internetdb_and_ripe_payloads():
     assert parse_as_overview({"data": {}}) == ""
 
 
+def test_parse_search_reads_urlscan_results():
+    payload = {
+        "total": 42,
+        "results": [
+            {
+                "page": {
+                    "url": "https://shop.example.com/",
+                    "domain": "shop.example.com",
+                    "ip": "203.0.113.9",
+                    "country": "DE",
+                    "status": "200",
+                },
+                "task": {"time": "2026-09-25T14:11:56.713Z"},
+            },
+            {"page": {}, "task": {}},
+        ],
+    }
+    data = parse_search(payload)
+    assert data["scan_count"] == 42
+    assert data["hosts"] == ["shop.example.com"]
+    assert len(data["pages"]) == 1
+    assert data["pages"][0]["scanned"] == "2026-09-25"
+    assert data["pages"][0]["ip"] == "203.0.113.9"
+
+
+def test_urlscan_skips_free_mail_providers():
+    import asyncio
+
+    from emailscope.context import Context, Options
+    from emailscope.modules import identity as identity_module
+    from emailscope.modules import urlscan
+
+    parsed = identity_module.parse_email("someone@gmail.com")
+    context = Context(
+        email=parsed.email, identity=parsed, client=_ExplodingClient(), options=Options()
+    )
+    finding = asyncio.run(urlscan.collect(context))
+    assert finding.status == "skip"
+    assert "gmail.com" in finding.summary
+
+
 def test_every_module_is_registered_in_the_cli_and_report():
     from emailscope.cli import MODULES
     from emailscope.context import Options
@@ -237,6 +279,7 @@ def _collectors():
         rdap,
         reputation,
         smtp_verify,
+        urlscan,
     )
 
     return {
@@ -245,6 +288,7 @@ def _collectors():
         "rdap": rdap.collect,
         "ct": ct.collect,
         "hosts": hosts.collect,
+        "urlscan": urlscan.collect,
         "gravatar": gravatar.collect,
         "pgp": pgp.collect,
         "github": github.collect,

@@ -19,7 +19,7 @@ from emailscope.context import Options
 from emailscope.engine import run
 from emailscope.models import Case
 from emailscope.modules import identity
-from emailscope.report import render, to_json, to_markdown
+from emailscope.report import render, to_csv, to_json, to_markdown
 from emailscope.theme import DEFAULT_THEME, THEMES, Theme, get_theme
 
 MODULES = {
@@ -28,6 +28,7 @@ MODULES = {
     "rdap": "Registration record for the address's own domain (RDAP)",
     "ct": "Certificate transparency names for the domain (certspotter)",
     "hosts": "Hostnames observed for the domain (HackerTarget)",
+    "urlscan": "Public browser scans of the domain (urlscan.io)",
     "gravatar": "Public Gravatar profile and linked verified accounts",
     "pgp": "OpenPGP key published for the address (keys.openpgp.org)",
     "github": "Public commits signed with the address (name + login)",
@@ -61,6 +62,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("email", nargs="?", help="email address to investigate")
     parser.add_argument("-o", "--output", metavar="FILE", help="write results to FILE")
     parser.add_argument("--json", action="store_true", help="emit JSON instead of the rich report")
+    parser.add_argument(
+        "--csv", action="store_true", help="emit one CSV row per module instead of the rich report"
+    )
     parser.add_argument(
         "--markdown", action="store_true", help="emit Markdown instead of the rich report"
     )
@@ -249,14 +253,16 @@ def main(argv: list[str] | None = None) -> int:
         _error(err, theme, f"not a valid email address: {args.email}")
         return 1
 
-    if args.json and args.markdown:
-        _error(err, theme, "use either --json or --markdown, not both")
-        return 1
-
     if args.output and args.output.endswith(".json"):
         args.json = True
     if args.output and args.output.endswith((".md", ".markdown")):
         args.markdown = True
+    if args.output and args.output.endswith(".csv"):
+        args.csv = True
+
+    if sum(bool(flag) for flag in (args.json, args.markdown, args.csv)) > 1:
+        _error(err, theme, "use only one of --json, --markdown or --csv")
+        return 1
 
     try:
         options = resolve_options(args)
@@ -277,6 +283,8 @@ def main(argv: list[str] | None = None) -> int:
         payload = to_json(case)
     elif args.markdown:
         payload = to_markdown(case)
+    elif args.csv:
+        payload = to_csv(case)
     else:
         payload = None
 
