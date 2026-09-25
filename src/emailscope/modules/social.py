@@ -1,6 +1,6 @@
-"""The four mandatory platform checks: Instagram, X, LinkedIn and GitHub.
+"""The five mandatory platform checks: Instagram, X, LinkedIn, GitHub, YouTube.
 
-Every investigation reports these four accounts in their own panel — they are
+Every investigation reports these five accounts in their own panel — they are
 the handles a reader expects to see first. The probe is the same
 public-endpoint classification the candidate-account module uses; a platform
 the endpoints cannot decide (bot wall, rate limit, reset connection) is
@@ -17,7 +17,7 @@ from emailscope.context import Context
 from emailscope.models import Finding
 from emailscope.modules import handle_probe
 
-PLATFORM_ORDER = ("instagram", "x", "linkedin", "github")
+PLATFORM_ORDER = ("instagram", "x", "linkedin", "github", "youtube")
 MAX_PLATFORM_HANDLES = 5
 NOTE = handle_probe.NOTE
 
@@ -26,11 +26,12 @@ _SEARCHES = (
     ("X", "site:x.com OR site:twitter.com {email}"),
     ("LinkedIn", "site:linkedin.com/in {email}"),
     ("GitHub", 'site:github.com "{email}"'),
+    ("YouTube", "site:youtube.com {email}"),
 )
 
 
 def _search_links(email: str) -> list[dict[str, str]]:
-    """Fallback: the four platform queries, ready to open, when probing is impossible."""
+    """Fallback: one search query per mandatory platform, ready to open."""
     links: list[dict[str, str]] = []
     for label, template in _SEARCHES:
         query = template.format(email=email)

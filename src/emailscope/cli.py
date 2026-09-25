@@ -35,7 +35,7 @@ MODULES = {
     "pgp": "OpenPGP key published for the address (keys.openpgp.org)",
     "github": "Public commits signed with the address (name + login)",
     "mentions": "The address itself in public code and forums (Sourcegraph, HN, Stack Exchange)",
-    "social": "Mandatory accounts: Instagram, X, LinkedIn and GitHub",
+    "social": "Mandatory accounts: Instagram, X, LinkedIn, GitHub and YouTube",
     "accounts": "Candidate usernames probed against public profile endpoints",
     "mailhost": "ASN, open ports and CVEs on the mail servers (RIPE + Shodan)",
     "smtp": "RCPT TO verification against the real mail exchangers",

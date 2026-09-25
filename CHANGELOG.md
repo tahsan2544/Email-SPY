@@ -4,6 +4,15 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-09-25
+
+### Added
+
+- **YouTube** joins the mandatory panel (Instagram, X, LinkedIn, GitHub,
+  YouTube): `https://www.youtube.com/@{username}` verified live — real
+  channels answer 200 with a proper `<title>`, missing handles answer 404 —
+  with a fifth `site:` search fallback for the no-handles case.
+
 ## [1.8.0] - 2026-09-25
 
 ### Added

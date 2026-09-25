@@ -135,7 +135,7 @@ _MODULE_SOURCES = {
     "pgp": "keys.openpgp.org",
     "github": "github.com",
     "mentions": "sourcegraph + hn + stackexchange",
-    "social": "instagram + x + linkedin + github",
+    "social": "instagram+x+linkedin+github+youtube",
     "accounts": "8 profile endpoints",
     "mailhost": "ripe.net + shodan.io",
     "smtp": "mail exchangers",

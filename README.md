@@ -30,9 +30,10 @@ Reports open with the **EMAIL SPY** wordmark under the default `spy` theme —
 - 🔗 **A feedback loop** — the real name recovered from public commit metadata
   is fed back into the account probe, so `matt@mullenweg.com` goes from testing
   `matt` to also testing `mattmullenweg`, `m.mullenweg` and `mullenweg`.
-- 📌 **Four mandatory accounts** — **Instagram, X, LinkedIn and GitHub** are
-  probed on every run and reported in their own panel first: `exists`,
-  `missing` or an honest `unknown` when the platform blocks the check.
+- 📌 **Five mandatory accounts** — **Instagram, X, LinkedIn, GitHub and
+  YouTube** are probed on every run and reported in their own panel first:
+  `exists`, `missing` or an honest `unknown` when the platform blocks the
+  check.
 - 🏗️ **Infrastructure** — mail exchangers, SPF/DKIM/DMARC/BIMI, domain
   registration, certificate transparency, observed hosts, open ports and known
   CVEs on the mail servers.
@@ -85,7 +86,7 @@ emailspy jane.doe@example.com -o report.html
 # 🎯 only the modules you care about
 emailspy jane.doe@example.com --only dns,rdap,smtp
 
-# 📌 just the four mandatory accounts (Instagram, X, LinkedIn, GitHub)
+# 📌 just the five mandatory accounts (Instagram, X, LinkedIn, GitHub, YouTube)
 emailspy jane.doe@example.com --only social
 
 # 🧅 route every request through Tor
@@ -276,7 +277,7 @@ the first request is sent**.
 | 🖼️ `gravatar` | Gravatar v3 API | display name, location, job title, company, about text, avatar, **verified social accounts linked to the address** |
 | 🔏 `pgp` | keys.openpgp.org | **published OpenPGP key**: fingerprint, user IDs, and the *other* addresses the owner published on the same key (a hit means the address is verified there) |
 | ⌨️ `github` | GitHub commit search | **real name from commit metadata**, linked GitHub login when the address is verified, repositories, first/last seen |
-| 📌 `social` | instagram + x + linkedin + github | **the four mandatory accounts** — one `exists` / `missing` / `unknown` verdict per platform for the derived usernames, always its own panel (falls back to `site:` search links when no username can be derived) |
+| 📌 `social` | instagram + x + linkedin + github + youtube | **the five mandatory accounts** — one `exists` / `missing` / `unknown` verdict per platform for the derived usernames, always its own panel (falls back to `site:` search links when no username can be derived) |
 | 🪪 `accounts` | 8 public profile endpoints | which candidate usernames are registered on GitLab, Mastodon, Bluesky, Keybase, Docker Hub, Hacker News, SoundCloud, Linktree |
 | 🗣️ `mentions` | Sourcegraph + Hacker News + Stack Exchange | **where the address itself turns up in public code and discussions**: matching repository files with the line that hit, forum posts with dates, and ready-made search links — runs for free-mail addresses too |
 | 📡 `mailhost` | RIPEstat + Shodan InternetDB | for the address's own mail servers: **ASN holder**, announced prefix, open ports, **known CVE count**, and the hostnames those IPs also serve |
@@ -300,7 +301,7 @@ the first request is sent**.
 ████  █ █ █ █████   █   █        ███  ████    █
 █     █   █ █   █   █   █           █ █       █
 █████ █   █ █   █ █████ █████   ████  █       █
-CASE 33252C                                                 2026-09-25 16:59 UTC
+CASE 33252C                                                 2026-09-25 17:23 UTC
 SUBJECT  m@mullenweg.com
 ────────────────────────────────────────────────────────────────────────────────
     PROVIDER   mullenweg.com           MAILBOX   not checked
@@ -321,13 +322,14 @@ public records only — authorised investigations
 │  SPF             v=spf1 ip4:96.127.182.10 a mx ?all
 │  DKIM selectors  default._domainkey
 
-│  10  [UNKNOWN]  Mandatory accounts        instagram + x + linkedin + github
+│  10  [UNKNOWN]  Mandatory accounts      instagram+x+linkedin+github+youtube
 │  No candidate usernames to probe — search links provided instead.
 │    Platform     Verdict    Username    Profile
 │    Instagram    unknown    —           —
 │    X            unknown    —           —
 │    LinkedIn     unknown    —           —
 │    GitHub       unknown    —           —
+│    YouTube      unknown    —           —
 │  Note  Username registered — association with this address is not proven.
 
 Instagram search   https://www.google.com/search?q=site%3Ainstagram.com+m%40mull
@@ -351,7 +353,7 @@ X search           https://www.google.com/search?q=site%3Ax.com+OR+site%3Atwitte
 └──────────────────────────────────────────────────────────────────────────────┘
 Sourcegraph search      https://sourcegraph.com/search?q=context%3Aglobal+m%40m…
 
-FINDINGS 1   SOURCES 17   SKIPPED 12                CASE 33252C   emailspy 1.8.0
+FINDINGS 1   SOURCES 17   SKIPPED 12                CASE 33252C   emailspy 1.9.0
 ```
 
 ### 📖 How to read it
@@ -366,25 +368,26 @@ FINDINGS 1   SOURCES 17   SKIPPED 12                CASE 33252C   emailspy 1.8.0
   screen — your eye lands on what was actually found.
 - **`01`, `02`, … is probe order**, the fixed pipeline the tool runs
   (identity → dns → …), **not** a ranking.
-- **The mandatory panel never disappears** — Instagram, X, LinkedIn and GitHub
-  always get a verdict row: `exists` means the username is registered,
-  `missing` means the platform confirmed it is not, and `unknown` means the
-  platform blocked the check (a bot wall or rate limit), never that the
-  account is absent.
+- **The mandatory panel never disappears** — Instagram, X, LinkedIn, GitHub
+  and YouTube always get a verdict row: `exists` means the username is
+  registered, `missing` means the platform confirmed it is not, and `unknown`
+  means the platform blocked the check (a bot wall or rate limit), never that
+  the account is absent.
 
 An address whose local part is a registered username shows the panel at full
-strength (`nasa@example.com` — the username `nasa` exists on three platforms;
+strength (`nasa@example.com` — the username `nasa` exists on four platforms;
 LinkedIn's bot wall stays an honest `unknown`):
 
 ```
-│  10  [ FOUND ]  Mandatory accounts        instagram + x + linkedin + github  │
-│  3 of 4 platforms confirmed: Instagram, X, GitHub.                           │
+│  10  [ FOUND ]  Mandatory accounts      instagram+x+linkedin+github+youtube  │
+│  4 of 5 platforms confirmed: Instagram, X, GitHub, YouTube.                  │
 │                                                                              │
 │    Platform     Verdict    Username    Profile                               │
 │    Instagram    exists     @nasa       https://www.instagram.com/nasa/       │
 │    X            exists     @nasa       https://x.com/nasa                    │
 │    LinkedIn     unknown    —           —                                     │
 │    GitHub       exists     @nasa       https://github.com/nasa               │
+│    YouTube      exists     @nasa       https://www.youtube.com/@nasa         │
 │                                                                              │
 │  Handles Tested  nasa                                                        │
 │  Note            Username registered — association with this address is not  │
@@ -629,8 +632,8 @@ src/emailscope/
   false negative.
 - Provider and disposable-domain lists are curated, not exhaustive.
 - Consumer platforms defend hard, so the mandatory panel stays honest about
-  what it can prove: X answers a clean 200/404, Instagram serves soft-404
-  pages (detected via the profile's `og:title` marker), and LinkedIn
+  what it can prove: X and YouTube answer a clean 200/404, Instagram serves
+  soft-404 pages (detected via the profile's `og:title` marker), and LinkedIn
   frequently answers `999` or resets the connection — those cases report
   `unknown`, never a false "not found". TikTok and Facebook still have no
   usable unauthenticated endpoint; use the generated `site:` dorks for them.

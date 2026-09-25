@@ -37,17 +37,18 @@ def _context(client, email: str = "john.doe@example.com", options: Options | Non
     return Context(email=parsed.email, identity=parsed, client=client, options=options or Options())
 
 
-def test_core_sites_are_exactly_the_four_mandatory_platforms():
+def test_core_sites_are_exactly_the_five_mandatory_platforms():
     assert {site["id"] for site in handle_probe.core_sites()} == {
         "instagram",
         "x",
         "linkedin",
         "github",
+        "youtube",
     }
     assert set(social.PLATFORM_ORDER) == {site["id"] for site in handle_probe.core_sites()}
 
 
-def test_candidate_sites_exclude_the_mandatory_four():
+def test_candidate_sites_exclude_the_mandatory_five():
     ids = {site["id"] for site in handle_probe.candidate_sites()}
     assert ids == {
         "gitlab",
@@ -109,6 +110,7 @@ def test_collect_reports_one_verdict_per_mandatory_platform():
             "x.com": httpx.Response(404, text="not found"),
             "linkedin.com": httpx.Response(999, text="anti-bot interstitial"),
             "api.github.com": httpx.Response(200, json={"login": "jdoe"}),
+            "youtube.com": httpx.Response(404, text="404 Not Found"),
         }
     )
     finding = asyncio.run(social.collect(_context(client)))
@@ -120,7 +122,8 @@ def test_collect_reports_one_verdict_per_mandatory_platform():
     assert verdicts["X"]["verdict"] == "missing"
     assert verdicts["LinkedIn"]["verdict"] == "unknown", "999 is a bot wall, not absence"
     assert verdicts["GitHub"]["verdict"] == "exists"
-    assert finding.summary == "2 of 4 platforms confirmed: Instagram, GitHub."
+    assert verdicts["YouTube"]["verdict"] == "missing"
+    assert finding.summary == "2 of 5 platforms confirmed: Instagram, GitHub."
     # Only confirmed profiles become links; search dorks are the fallback.
     assert [link["label"] for link in finding.links] == [
         "Instagram @john.doe",
@@ -135,13 +138,14 @@ def test_collect_reports_info_when_every_platform_says_missing():
             "x.com": httpx.Response(404, text="nope"),
             "linkedin.com": httpx.Response(404, text="nope"),
             "api.github.com": httpx.Response(404, json={"message": "Not Found"}),
+            "youtube.com": httpx.Response(404, text="404 Not Found"),
         }
     )
     finding = asyncio.run(social.collect(_context(client)))
 
     assert finding.status == "info"
     assert all(row["verdict"] == "missing" for row in finding.data["platforms"])
-    assert finding.summary.startswith("None of the 4 platforms")
+    assert finding.summary.startswith("None of the 5 platforms")
     assert all("google.com/search" in link["url"] for link in finding.links)
 
 
@@ -153,6 +157,7 @@ def test_collect_is_unknown_when_every_platform_is_blocked():
             "x.com": httpx.Response(429, text="rate limited"),
             "linkedin.com": httpx.Response(999, text="blocked"),
             "api.github.com": httpx.Response(500, text="oops"),
+            "youtube.com": httpx.ConnectError("boom", request=request),
         }
     )
     finding = asyncio.run(social.collect(_context(client)))
@@ -169,7 +174,13 @@ def test_collect_without_handles_never_probes_and_offers_search_links():
     assert finding.data["handles_tested"] == []
     assert all(row["verdict"] == "unknown" for row in finding.data["platforms"])
     labels = [link["label"] for link in finding.links]
-    assert labels == ["Instagram search", "X search", "LinkedIn search", "GitHub search"]
+    assert labels == [
+        "Instagram search",
+        "X search",
+        "LinkedIn search",
+        "GitHub search",
+        "YouTube search",
+    ]
     assert any("site%3Alinkedin.com" in link["url"] for link in finding.links)
 
 

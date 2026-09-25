@@ -45,6 +45,16 @@
       "core": true
     },
     {
+      "id": "youtube",
+      "name": "YouTube",
+      "url": "https://www.youtube.com/@{username}",
+      "profile": "https://www.youtube.com/@{username}",
+      "exists_status": [200],
+      "missing_status": [404],
+      "rate_limit": 0.5,
+      "core": true
+    },
+    {
       "id": "gitlab",
       "name": "GitLab",
       "url": "https://gitlab.com/api/v4/users?username={username}",
