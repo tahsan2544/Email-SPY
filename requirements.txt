@@ -1,0 +1,4 @@
+# Runtime dependencies. Keep in sync with [project.dependencies] in pyproject.toml.
+httpx[socks]>=0.27
+dnspython>=2.4
+rich>=13.7
