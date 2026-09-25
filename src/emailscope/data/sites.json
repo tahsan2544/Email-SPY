@@ -1,5 +1,5 @@
 {
-  "comment": "Public profile endpoints verified from the client. 'exists_status' is the HTTP status that proves the handle exists; 'missing_status' proves it does not. Probes are only run for handles derived from the investigated address and are rate limited.",
+  "comment": "Public profile endpoints verified from the client. 'exists_status' is the HTTP status that proves the handle exists; 'missing_status' proves it does not. 'exists_body' requires that marker on a 200 before calling it exists; 'missing_body' catches soft-404 pages; 'probe_bytes' widens the body window when the marker sits deep in the HTML. 'core' marks the four mandatory platforms the social module always reports. Probes are only run for handles derived from the investigated address and are rate limited.",
   "sites": [
     {
       "id": "github",
@@ -8,7 +8,41 @@
       "profile": "https://github.com/{username}",
       "exists_status": [200],
       "missing_status": [404],
-      "extra_headers": {"Accept": "application/vnd.github+json"}
+      "extra_headers": {"Accept": "application/vnd.github+json"},
+      "core": true
+    },
+    {
+      "id": "instagram",
+      "name": "Instagram",
+      "url": "https://www.instagram.com/{username}/",
+      "profile": "https://www.instagram.com/{username}/",
+      "exists_status": [200],
+      "exists_body": "property=\"og:title\"",
+      "missing_body": "<title>\\s*Instagram\\s*</title>",
+      "probe_bytes": 130000,
+      "rate_limit": 1.0,
+      "core": true
+    },
+    {
+      "id": "x",
+      "name": "X",
+      "url": "https://x.com/{username}",
+      "profile": "https://x.com/{username}",
+      "exists_status": [200],
+      "missing_status": [404],
+      "rate_limit": 0.35,
+      "core": true
+    },
+    {
+      "id": "linkedin",
+      "name": "LinkedIn",
+      "url": "https://www.linkedin.com/in/{username}",
+      "profile": "https://www.linkedin.com/in/{username}",
+      "exists_status": [200],
+      "missing_status": [404],
+      "browser_ua": true,
+      "rate_limit": 1.5,
+      "core": true
     },
     {
       "id": "gitlab",

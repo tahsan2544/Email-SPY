@@ -34,6 +34,16 @@ def load_sites() -> list[dict[str, Any]]:
     return list(payload.get("sites") or [])
 
 
+def core_sites() -> list[dict[str, Any]]:
+    """The mandatory platforms: Instagram, X, LinkedIn and GitHub."""
+    return [site for site in load_sites() if site.get("core")]
+
+
+def candidate_sites() -> list[dict[str, Any]]:
+    """The wider probe set used by the candidate-account module (core excluded)."""
+    return [site for site in load_sites() if not site.get("core")]
+
+
 def build_url(template: str, username: str) -> str:
     return template.format(username=quote(username, safe="._-"))
 
@@ -86,6 +96,9 @@ def classify(response: httpx.Response, site: dict[str, Any], body: str) -> str |
         pattern = site.get("missing_body")
         if pattern and re.search(pattern, body, re.I):
             return "missing"
+        required = site.get("exists_body")
+        if required and not re.search(required, body, re.I):
+            return None
         return "exists"
     if status in missing_status:
         return "missing"
@@ -112,12 +125,18 @@ def collect_handles(
     return handles[:MAX_HANDLES]
 
 
-async def _check(
+async def probe(
     context: Context,
     site: dict[str, Any],
     username: str,
     source: str,
-) -> dict[str, Any] | None:
+) -> tuple[str, dict[str, Any] | None]:
+    """Classify one handle on one platform.
+
+    Returns ``("exists", hit)``, ``("missing", None)`` or ``("unknown", None)``
+    — the third covers bot walls, rate limits and transport errors, so callers
+    never have to guess between "absent" and "we could not tell".
+    """
     url = build_url(site["url"], username)
     headers = dict(site.get("extra_headers") or {})
     try:
@@ -129,13 +148,15 @@ async def _check(
             rate_limit=float(site.get("rate_limit") or context.options.rate_limit),
         )
     except httpx.HTTPError:
-        return None
+        return "unknown", None
 
-    body = response.text[:4000] if response.status_code < 500 else ""
-    if classify(response, site, body) != "exists":
-        return None
+    probe_bytes = int(site.get("probe_bytes") or 4000)
+    body = response.text[:probe_bytes] if response.status_code < 500 else ""
+    verdict = classify(response, site, body)
+    if verdict != "exists":
+        return verdict or "unknown", None
 
-    return {
+    hit = {
         "service": site.get("name") or site["id"],
         "site_id": site.get("id") or "",
         "username": username,
@@ -143,6 +164,17 @@ async def _check(
         "url": build_url(site.get("profile") or site["url"], username),
         "http_status": response.status_code,
     }
+    return "exists", hit
+
+
+async def _check(
+    context: Context,
+    site: dict[str, Any],
+    username: str,
+    source: str,
+) -> dict[str, Any] | None:
+    verdict, hit = await probe(context, site, username, source)
+    return hit if verdict == "exists" else None
 
 
 async def collect(context: Context, extra_names: list[str] | None = None) -> Finding:
@@ -159,7 +191,7 @@ async def collect(context: Context, extra_names: list[str] | None = None) -> Fin
             summary="Local part yields no usable username.",
         )
 
-    sites = load_sites()
+    sites = candidate_sites()
     jobs = [(site, handle, source) for handle, source in handles for site in sites][:MAX_JOBS]
 
     semaphore = asyncio.Semaphore(8)

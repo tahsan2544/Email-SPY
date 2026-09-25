@@ -106,6 +106,7 @@ _SKIP_ROW_KEYS = {
     "commits",
     "repositories",
     "matches",
+    "platforms",
     "breaches",
     "dkim",
     "txt",
@@ -134,7 +135,8 @@ _MODULE_SOURCES = {
     "pgp": "keys.openpgp.org",
     "github": "github.com",
     "mentions": "sourcegraph + hn + stackexchange",
-    "accounts": "9 profile endpoints",
+    "social": "instagram + x + linkedin + github",
+    "accounts": "8 profile endpoints",
     "mailhost": "ripe.net + shodan.io",
     "smtp": "mail exchangers",
     "reputation": "emailrep.io",
@@ -184,6 +186,7 @@ def summary_fields(case: Case) -> list[tuple[str, str, str]]:
     """
     identity = case.get("identity")
     accounts = case.get("accounts")
+    social = case.get("social")
     smtp = case.get("smtp")
     github = case.get("github")
 
@@ -202,11 +205,14 @@ def summary_fields(case: Case) -> list[tuple[str, str, str]]:
         fields.append(("MAILBOX", verdict.replace("_", " "), tone))
 
     matches = (accounts.data.get("matches") or []) if accounts else []
+    platforms = (social.data.get("platforms") or []) if social else []
+    social_hits = [row for row in platforms if row.get("verdict") == "exists"]
+    handle_count = len(matches) + len(social_hits)
     fields.append(
         (
             "HANDLES",
-            f"{len(matches)} found" if matches else "none found",
-            "signal" if matches else "muted",
+            f"{handle_count} found" if handle_count else "none found",
+            "signal" if handle_count else "muted",
         )
     )
 
@@ -525,6 +531,34 @@ class Reporter:
             )
         return table
 
+    def _render_social(self, finding: Finding):
+        platforms = finding.data.get("platforms") or []
+        if not platforms:
+            return None
+        theme = self.theme
+        verdict_colour = {
+            "exists": theme.stamp,
+            "missing": theme.muted,
+            "unknown": theme.warn,
+        }
+        table = Table(
+            show_header=True, header_style=f"bold {theme.graphite}", box=None, padding=(0, 2)
+        )
+        table.add_column("Platform", style=theme.graphite, no_wrap=True)
+        table.add_column("Verdict", no_wrap=True)
+        table.add_column("Username", style=f"bold {theme.signal}", no_wrap=True)
+        table.add_column("Profile", style=theme.remote, overflow="fold")
+        for row in platforms:
+            verdict = str(row.get("verdict") or "unknown")
+            username = str(row.get("username") or "")
+            table.add_row(
+                str(row.get("platform") or ""),
+                Text(verdict, style=verdict_colour.get(verdict, theme.ink)),
+                f"@{username}" if username else "—",
+                str(row.get("url") or "—"),
+            )
+        return table
+
     def _render_accounts(self, finding: Finding):
         matches = finding.data.get("matches") or []
         if not matches:
@@ -685,6 +719,7 @@ _CUSTOM_RENDERERS = {
     "dns": Reporter._render_dns,
     "mailhost": Reporter._render_mailhost,
     "github": Reporter._render_github,
+    "social": Reporter._render_social,
     "accounts": Reporter._render_accounts,
     "breaches": Reporter._render_breaches,
     "smtp": Reporter._render_smtp,

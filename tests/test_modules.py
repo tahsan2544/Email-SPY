@@ -429,7 +429,7 @@ def test_every_module_is_registered_in_the_cli_and_report():
     from emailscope.engine import PHASE_ONE
     from emailscope.report import _MODULE_SOURCES
 
-    known = {name for name, _ in PHASE_ONE} | {"accounts"}
+    known = {name for name, _ in PHASE_ONE} | {"accounts", "social"}
     assert set(MODULES) == known
     assert known <= set(_MODULE_SOURCES)
     for name in MODULES:
@@ -460,6 +460,7 @@ def _collectors():
         rdap,
         reputation,
         smtp_verify,
+        social,
         urlscan,
     )
 
@@ -474,6 +475,7 @@ def _collectors():
         "pgp": pgp.collect,
         "github": github.collect,
         "mentions": mentions.collect,
+        "social": social.collect,
         "accounts": handle_probe.collect,
         "mailhost": mailhost.collect,
         "smtp": smtp_verify.collect,

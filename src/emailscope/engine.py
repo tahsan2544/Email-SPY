@@ -28,6 +28,7 @@ from emailscope.modules import (
     rdap,
     reputation,
     smtp_verify,
+    social,
     urlscan,
 )
 
@@ -86,18 +87,30 @@ async def run(email: str, options: Options | None = None) -> Case:
         if github_finding and github_finding.status == "hit":
             observed_names = [n for n in github_finding.data.get("names", []) if isinstance(n, str)]
 
-        try:
-            accounts = await handle_probe.collect(context, extra_names=observed_names)
-        except Exception as exc:  # noqa: BLE001 - one module must not sink the report
-            accounts = _from_exception("accounts", exc)
+        social_result, accounts_result = await asyncio.gather(
+            social.collect(context, extra_names=observed_names),
+            handle_probe.collect(context, extra_names=observed_names),
+            return_exceptions=True,
+        )
+        social_finding = (
+            _from_exception("social", social_result)
+            if isinstance(social_result, BaseException)
+            else social_result
+        )
+        accounts = (
+            _from_exception("accounts", accounts_result)
+            if isinstance(accounts_result, BaseException)
+            else accounts_result
+        )
 
     ordered: list[Finding] = []
     for name, _ in PHASE_ONE:
         if name in findings:
             ordered.append(findings[name])
-    # Render account matches straight after the code footprint that fed them.
+    # Render both account findings straight after the code footprint that fed them.
     insert_at = next((i + 1 for i, f in enumerate(ordered) if f.module == "github"), len(ordered))
-    ordered.insert(insert_at, accounts)
+    ordered.insert(insert_at, social_finding)
+    ordered.insert(insert_at + 1, accounts)
 
     for finding in ordered:
         case.add(finding)

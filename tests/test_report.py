@@ -98,7 +98,7 @@ def test_render_does_not_raise():
     assert "github.com/johndoe" in output
     assert "google.com/search?q=secret" in output
     assert "FINDINGS" in output
-    assert "9 profile endpoints" in output, "every heading carries its source"
+    assert "8 profile endpoints" in output, "every heading carries its source"
     assert f"emailspy {__version__}" in output
 
 

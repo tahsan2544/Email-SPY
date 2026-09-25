@@ -15,5 +15,6 @@ __all__ = [
     "mentions",
     "reputation",
     "smtp_verify",
+    "social",
     "urlscan",
 ]

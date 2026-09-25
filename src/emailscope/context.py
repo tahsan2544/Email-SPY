@@ -17,6 +17,7 @@ class Options:
 
     identity: bool = True
     accounts: bool = True
+    social: bool = True
     smtp: bool = True
     gravatar: bool = True
     github: bool = True

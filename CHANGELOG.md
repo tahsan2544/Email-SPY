@@ -4,6 +4,34 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-09-25
+
+### Added
+
+- `social` module: the four mandatory platform checks — **Instagram, X,
+  LinkedIn and GitHub** — in their own panel on every run (disable with
+  `--no-social`, select with `--only social`). Each platform gets an
+  `exists` / `missing` / `unknown` verdict; bot walls, rate limits and
+  connection resets report `unknown`, never a guessed absence.
+- Instagram endpoint verified live: a profile answers 200 with an `og:title`
+  marker when the handle exists, and a 200 soft-404
+  (`<title>Instagram</title>`) when it does not. New `exists_body` (require a
+  marker before trusting a 200) and `probe_bytes` (widen the body window past
+  the default 4 KB) classification options back this.
+- X endpoint verified live: clean 200/404 against real and fabricated handles
+  with the project user agent.
+- LinkedIn endpoint: 200 with the browser user agent for real profiles;
+  its `999` anti-bot interstitial is classified `unknown`, not `missing`.
+- When no candidate username can be derived from the address, the panel
+  still ships four ready-made `site:` search links instead of probing.
+
+### Changed
+
+- The candidate-account module now covers the eight remaining platforms —
+  GitHub moved to the mandatory panel — and its source label follows the
+  count (`8 profile endpoints`).
+- The summary strip's `HANDLES` figure includes mandatory-platform hits.
+
 ## [1.7.0] - 2026-09-25
 
 ### Added
