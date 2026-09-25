@@ -68,7 +68,26 @@ def test_invalid_email_is_rejected_before_any_lookup(capsys):
 def test_conflicting_output_flags(capsys):
     assert main(["user@example.com", "--json", "--markdown"]) == 1
     assert main(["user@example.com", "--json", "--csv"]) == 1
+    assert main(["user@example.com", "--json", "--html"]) == 1
     assert "only one of --json" in capsys.readouterr().err
+
+
+def test_html_output_written_to_file(tmp_path, capsys):
+    target = tmp_path / "report.html"
+    code = main(["john.doe@example.com", "-o", str(target), "--only", "identity"])
+    assert code == 0
+    html = target.read_text()
+    assert html.startswith("<!DOCTYPE html>")
+    assert "john.doe@example.com" in html
+    assert "written" in capsys.readouterr().out
+
+
+def test_html_flag_prints_one_document_for_a_batch(capsys):
+    code = main(["john.doe@example.com", "jane@example.org", "--only", "identity", "--html"])
+    assert code == 0
+    html = capsys.readouterr().out
+    assert html.count("<!DOCTYPE html>") == 1
+    assert "john.doe@example.com" in html and "jane@example.org" in html
 
 
 def test_csv_output_written_to_file(tmp_path, capsys):

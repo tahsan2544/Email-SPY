@@ -4,6 +4,26 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-09-25
+
+### Added
+
+- `--html` export (and `.html` / `.htm` output files): one self-contained
+  document — inline CSS, no scripts, no webfonts, no network — that keeps the
+  terminal report's grammar: status stamps, right-aligned source provenance,
+  left-rule panels, the summary strip and the ethics line. A batch becomes one
+  file with a section per address. Honours `--theme`.
+- Print styles and a light-mode palette for printing, WCAG AA contrast checks
+  on every text colour (a theme colour is nudged lighter only if it would
+  otherwise fail on the page background), visible focus rings and underlined
+  links.
+
+### Changed
+
+- The header summary strip (provider / mailbox / handles / names) is now built
+  by one shared `summary_fields()` used by both the terminal and HTML
+  renderers, so the two exports cannot drift apart.
+
 ## [1.6.0] - 2026-09-25
 
 ### Added

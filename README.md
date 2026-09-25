@@ -80,6 +80,9 @@ emailspy jane.doe@example.com
 emailspy jane.doe@example.com --json -o report.json
 emailspy jane.doe@example.com --markdown -o report.md
 
+# a self-contained report you can send to someone (no scripts, no fonts, prints cleanly)
+emailspy jane.doe@example.com -o report.html
+
 # only the modules you care about
 emailspy jane.doe@example.com --only dns,rdap,smtp
 
@@ -158,7 +161,7 @@ domain reads in a different colour from the part you supplied.
 
 ```
 usage: emailspy [-h] [--batch FILE] [-o FILE] [--json] [--csv] [--markdown]
-                [--timeout TIMEOUT] [--rate-limit SECONDS] [--open]
+                [--html] [--timeout TIMEOUT] [--rate-limit SECONDS] [--open]
                 [--no-links] [--link-limit N] [--quiet] [--no-color]
                 [--list-modules] [--theme {classic,spy}] [--only MODULES]
                 [--proxy URL] [--list-themes] [--version] [--no-identity]
@@ -174,7 +177,7 @@ Investigate an email address: owner identity, linked accounts, mail infrastructu
 | Flag | Effect |
 | --- | --- |
 | `-o FILE` | write results to a file; `.json` / `.md` / `.csv` choose the format |
-| `--json`, `--markdown`, `--csv` | print that format to stdout instead of the rich report; several addresses give a JSON array, concatenated Markdown, or one CSV block per address |
+| `--json`, `--markdown`, `--csv`, `--html` | print that format to stdout instead of the rich report; several addresses give a JSON array, concatenated Markdown, one CSV block per address, or a single HTML file with a section per address |
 | `--batch FILE` | read more addresses from FILE, one per line (`#` comments) |
 | `--only M1,M2` | run only the listed modules (see `emailspy --list-modules`) |
 | `--proxy URL` | route every request through a proxy — `socks5h://127.0.0.1:9150` for Tor, `http://127.0.0.1:8080` for a local forwarder |
@@ -331,7 +334,8 @@ src/emailscope/
 ├── engine.py            two-phase orchestrator (collect → name → re-probe)
 ├── context.py           Options + Context shared by modules
 ├── http.py              shared async client: retries, backoff, per-host throttle
-├── report.py            rich renderer + JSON/Markdown exporters
+├── report.py            rich renderer + JSON/Markdown/CSV exporters
+├── htmlreport.py        self-contained HTML export (same grammar, prints cleanly)
 ├── theme.py             colour schemes (spy, classic)
 ├── models.py            Finding / Case
 ├── modules/             one file per data source

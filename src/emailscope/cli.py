@@ -18,6 +18,7 @@ from rich.text import Text
 from emailscope import __version__
 from emailscope.context import Options
 from emailscope.engine import run
+from emailscope.htmlreport import to_html
 from emailscope.models import Case
 from emailscope.modules import identity
 from emailscope.report import render, to_csv, to_json, to_markdown
@@ -74,6 +75,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--markdown", action="store_true", help="emit Markdown instead of the rich report"
+    )
+    parser.add_argument(
+        "--html",
+        action="store_true",
+        help="emit a self-contained HTML report instead of the rich report",
     )
     parser.add_argument(
         "--timeout", type=float, default=12.0, help="per-request timeout in seconds"
@@ -304,11 +310,13 @@ def main(argv: list[str] | None = None) -> int:
         args.json = True
     if args.output and args.output.endswith((".md", ".markdown")):
         args.markdown = True
+    if args.output and args.output.endswith((".html", ".htm")):
+        args.html = True
     if args.output and args.output.endswith(".csv"):
         args.csv = True
 
-    if sum(bool(flag) for flag in (args.json, args.markdown, args.csv)) > 1:
-        _error(err, theme, "use only one of --json, --markdown or --csv")
+    if sum(bool(flag) for flag in (args.json, args.markdown, args.csv, args.html)) > 1:
+        _error(err, theme, "use only one of --json, --markdown, --csv or --html")
         return 1
 
     try:
@@ -336,6 +344,8 @@ def main(argv: list[str] | None = None) -> int:
         payload = "\n\n".join(to_markdown(case) for case in cases)
     elif args.csv:
         payload = to_csv(cases)
+    elif args.html:
+        payload = to_html(cases, proxy=options.proxy, theme=theme)
     else:
         payload = None
 

@@ -175,6 +175,55 @@ def case_reference(email: str) -> str:
     return hashlib.sha256(email.encode("utf-8")).hexdigest()[:6].upper()
 
 
+def summary_fields(case: Case) -> list[tuple[str, str, str]]:
+    """The four facts a reader wants before opening any block.
+
+    Returns ``label, value, tone`` triples; the tone names the palette entry
+    that carries the meaning (``remote`` for third-party data, ``alert`` for a
+    negative verdict, and so on) so every exporter colours them the same way.
+    """
+    identity = case.get("identity")
+    accounts = case.get("accounts")
+    smtp = case.get("smtp")
+    github = case.get("github")
+
+    idata = identity.data if identity else {}
+    provider = idata.get("provider") or idata.get("domain") or case.email.partition("@")[2]
+
+    fields: list[tuple[str, str, str]] = []
+    if provider:
+        fields.append(("PROVIDER", str(provider), "remote"))
+
+    if smtp is None or smtp.status == "skip":
+        fields.append(("MAILBOX", "not checked", "muted"))
+    else:
+        verdict = str(smtp.data.get("verdict") or "unknown")
+        tone = {"exists": "stamp", "not_exists": "alert"}.get(verdict, "warn")
+        fields.append(("MAILBOX", verdict.replace("_", " "), tone))
+
+    matches = (accounts.data.get("matches") or []) if accounts else []
+    fields.append(
+        (
+            "HANDLES",
+            f"{len(matches)} found" if matches else "none found",
+            "signal" if matches else "muted",
+        )
+    )
+
+    names: list[str] = [str(n) for n in (idata.get("name_candidates") or [])]
+    for name in (github.data.get("names") or []) if github else []:
+        if str(name) not in names:
+            names.append(str(name))
+    # "Matt" and "Matt Mullenweg" are the same person; keep the fuller form.
+    names = [
+        name
+        for name in names
+        if not any(name is not other and name.lower() in other.lower() for other in names)
+    ]
+    fields.append(("NAMES", ", ".join(names[:2]) if names else "—", "ink" if names else "muted"))
+    return fields
+
+
 class Reporter:
     def __init__(
         self,
@@ -239,70 +288,27 @@ class Reporter:
         self.console.print()
 
     def _summary_strip(self, case: Case) -> Table | None:
-        """The four facts a reader wants before opening any block."""
+        """Render :func:`summary_fields` in the terminal's two-column grid."""
         theme = self.theme
-        identity = case.get("identity")
-        accounts = case.get("accounts")
-        smtp = case.get("smtp")
-        github = case.get("github")
-
-        idata = identity.data if identity else {}
-        provider = idata.get("provider") or idata.get("domain") or case.email.partition("@")[2]
-
-        fields: list[tuple[str, Text]] = []
-        if provider:
-            fields.append(("PROVIDER", Text(str(provider), style=theme.remote)))
-
-        if smtp is None or smtp.status == "skip":
-            mailbox = Text("not checked", style=theme.muted)
-        else:
-            verdict = str(smtp.data.get("verdict") or "unknown")
-            colour = {
-                "exists": theme.stamp,
-                "not_exists": theme.alert,
-                "unknown": theme.warn,
-            }.get(verdict, theme.warn)
-            mailbox = Text(verdict.replace("_", " "), style=colour)
-        fields.append(("MAILBOX", mailbox))
-
-        matches = (accounts.data.get("matches") or []) if accounts else []
-        fields.append(
-            (
-                "HANDLES",
-                Text(
-                    f"{len(matches)} found" if matches else "none found",
-                    style=theme.signal if matches else theme.muted,
-                ),
-            )
-        )
-
-        names: list[str] = [str(n) for n in (idata.get("name_candidates") or [])]
-        for name in (github.data.get("names") or []) if github else []:
-            if str(name) not in names:
-                names.append(str(name))
-        # "Matt" and "Matt Mullenweg" are the same person; keep the fuller form.
-        names = [
-            name
-            for name in names
-            if not any(name is not other and name.lower() in other.lower() for other in names)
-        ]
-        fields.append(
-            (
-                "NAMES",
-                Text(", ".join(names[:2]), style=theme.ink)
-                if names
-                else Text("\u2014", style=theme.muted),
-            )
-        )
-
+        tones = {
+            "remote": theme.remote,
+            "signal": theme.signal,
+            "stamp": theme.stamp,
+            "alert": theme.alert,
+            "warn": theme.warn,
+            "graphite": theme.graphite,
+            "muted": theme.muted,
+            "ink": theme.ink,
+        }
         table = Table.grid(expand=True, padding=(0, 3))
-        for _ in range(len(fields)):
+        fields = summary_fields(case)
+        for _ in fields:
             table.add_column(justify="right", no_wrap=True, style=theme.graphite)
             table.add_column(no_wrap=True, overflow="ellipsis")
         for start in range(0, len(fields), 2):
             row: list[Any] = []
-            for label, value in fields[start : start + 2]:
-                row.extend([label, value])
+            for label, value, tone in fields[start : start + 2]:
+                row.extend([label, Text(value, style=tones.get(tone, theme.ink))])
             if len(row) < 4:
                 row.extend(["", ""])
             table.add_row(*row)
