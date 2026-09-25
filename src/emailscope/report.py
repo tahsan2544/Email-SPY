@@ -14,7 +14,7 @@ import csv
 import hashlib
 import json
 import re
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from io import StringIO
 from typing import Any
 
@@ -252,7 +252,7 @@ class Reporter:
 
     def _header(self, case: Case) -> None:
         theme = self.theme
-        stamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
+        stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
         self.console.print()
         banner = banner_rows(theme.wordmark)
@@ -755,7 +755,7 @@ def to_json(case: Case) -> str:
     payload = {
         "tool": "emailscope",
         "version": __version__,
-        "generated_at": datetime.now(UTC).isoformat(),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         **case.to_dict(),
     }
     return json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=False)
@@ -796,7 +796,7 @@ def _md_escape(value: Any) -> str:
 def to_markdown(case: Case) -> str:
     lines = [f"# Email Spy report — `{case.email}`", ""]
     lines.append(
-        f"Generated {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')} by emailspy {__version__}."
+        f"Generated {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')} by emailspy {__version__}."
     )
     lines.append("")
     for finding in case.findings:

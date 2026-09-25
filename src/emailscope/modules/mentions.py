@@ -5,7 +5,7 @@ from __future__ import annotations
 import html
 import json
 import re
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import quote_plus
 
@@ -107,7 +107,7 @@ def parse_stackexchange(payload: dict[str, Any]) -> list[dict[str, str]]:
         created = item.get("creation_date")
         date = ""
         if isinstance(created, (int, float)):
-            date = datetime.fromtimestamp(created, UTC).strftime("%Y-%m-%d")
+            date = datetime.fromtimestamp(created, timezone.utc).strftime("%Y-%m-%d")
         hits.append({"source": "stack exchange", "title": title, "url": link, "date": date})
         if len(hits) >= MAX_PER_SOURCE:
             break

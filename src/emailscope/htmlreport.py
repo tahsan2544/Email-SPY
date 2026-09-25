@@ -7,7 +7,7 @@ source, left-rule panels) and prints cleanly.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from html import escape
 from string import Template
 from typing import Any
@@ -359,7 +359,7 @@ def _finding(finding: Finding) -> str:
 
 def _case_block(case: Case, theme: Theme, proxy: str | None) -> str:
     reference = case_reference(case.email)
-    stamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     local, _, domain = case.email.partition("@")
 
     subject = (
@@ -427,7 +427,7 @@ def to_html(
         wordmark = f'<pre class="wordmark">{escape(resolved.wordmark)}</pre>'
 
     title = items[0].email if len(items) == 1 else f"{len(items)} addresses"
-    generated = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
+    generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     sections = "".join(_case_block(case, resolved, proxy) for case in items)
     return (
         "<!DOCTYPE html>\n"
