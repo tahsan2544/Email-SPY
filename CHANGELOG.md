@@ -4,6 +4,31 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2026-09-25
+
+### Added
+
+- Friendlier CLI surfaces: an examples block and an ethics line in
+  `emailspy --help`; emoji icons, a header row and a "run a subset" tip in
+  `--list-modules`; a `⭐ default` marker and `in use` column in
+  `--list-themes`; emoji entries in `make help`.
+- `[project.urls]` (homepage, repository, issues, changelog) in
+  `pyproject.toml`, CI / Python-version / MIT badges in the README, and
+  repository topics on GitHub.
+- Emoji section headers across the issue templates, the pull-request template
+  and `CONTRIBUTING.md`.
+
+### Fixed
+
+- Python 3.10 support was declared but broken: `datetime.UTC` only exists on
+  3.11+, which failed CI on every push. The three modules that imported it now
+  use `timezone.utc`.
+- The issue-template contact link still carried the `OWNER/REPO` placeholder
+  instead of this repository's URL.
+- `CONTRIBUTING.md` described registering modules only in `PHASE_ONE`; the
+  second gather that runs `social` and `accounts` after `github` is now
+  documented.
+
 ## [1.9.0] - 2026-09-25
 
 ### Added

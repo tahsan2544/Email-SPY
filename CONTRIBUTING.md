@@ -3,7 +3,7 @@
 Thanks for helping. The bar for a change here is: **the data source has to be
 real, public, and verifiable.**
 
-## Getting started
+## 🚀 Getting started
 
 ```bash
 git clone <your-fork-url>
@@ -14,7 +14,7 @@ make check
 
 Python 3.10 or newer.
 
-## Ground rules
+## 📜 Ground rules
 
 1. **Never fabricate an endpoint, response shape, or API behaviour.** If you
    have not run the request yourself, do not ship it.
@@ -25,7 +25,7 @@ Python 3.10 or newer.
 4. **Tests ship with the change.** Bug fix → a test that fails before and
    passes after. New module → happy path plus at least one failure case.
 
-## Adding a probe site
+## 🔌 Adding a probe site
 
 1. Pick a platform with a public profile endpoint.
 2. Verify it both ways, from your machine:
@@ -44,30 +44,33 @@ Python 3.10 or newer.
 5. Open a PR describing the two responses you observed (redact nothing but
    personal data).
 
-## Adding a module
+## ➕ Adding a module
 
 - One file in `src/emailscope/modules/` exporting
   `async def collect(context: Context) -> Finding`.
-- Register it in `PHASE_ONE` in `src/emailscope/engine.py` (render order) and
-  in `MODULES` in `src/emailscope/cli.py` so `--no-<module>` works.
+- Register it in `PHASE_ONE` in `src/emailscope/engine.py` — the list order is
+  the order the report renders in — and in `MODULES` in `src/emailscope/cli.py`
+  so `--no-<module>` works. (The `social` and `accounts` panels are the two
+  exceptions: they run in the second gather after `github` so they can reuse
+  the names GitHub observed, and are inserted after that panel.)
 - Read credentials with `context.options.key("SOME_API_KEY")` and return
   `status="skip"` when absent. Never hardcode a key, never log one.
 - Degrade to `status="unknown"` when the network or the upstream refuses —
   do not report a negative you did not observe.
 
-## Style
+## 🎨 Style
 
 - `ruff check .` and `ruff format .` must be clean (`make lint`).
 - Comments explain *why*, not *what*.
 - Public functions get a short doc comment covering purpose, parameters, and
   what they raise.
 
-## Commits
+## 💬 Commits
 
 Conventional Commits: `feat(probe): add Bluesky lookup`, `fix(report): clip
 long hashes on narrow terminals`.
 
-## Reporting a bug
+## 🐛 Reporting a bug
 
 Open an issue with the exact command, the module that misbehaved, and what you
 expected. Strip API keys from any pasted output — reports include environment

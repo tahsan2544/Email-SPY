@@ -1,12 +1,12 @@
-## What changed
+## 📝 What changed
 
 <!-- and why -->
 
-## How it was verified
+## ✅ How it was verified
 
 <!-- commands run, tests added, live responses observed -->
 
-## Checklist
+## 📋 Checklist
 
 - [ ] `make check` passes
 - [ ] new/changed behaviour has tests

@@ -5,13 +5,14 @@ BIN := $(VENV)/bin
 .PHONY: help venv install lint format test check live clean build
 
 help:
-	@echo "install   create venv and install package + dev extras"
-	@echo "lint      ruff check + ruff format --check"
-	@echo "format    apply ruff format and autofixes"
-	@echo "test      run the offline test suite"
-	@echo "check     lint + test"
-	@echo "live      run tests including network-backed ones"
-	@echo "build     build sdist and wheel into dist/"
+	@echo "📦 install    create venv and install package + dev extras"
+	@echo "🔍 lint       ruff check + ruff format --check"
+	@echo "🎨 format     apply ruff format and autofixes"
+	@echo "🧪 test       run the offline test suite"
+	@echo "✅ check      lint + test"
+	@echo "🌐 live       run tests including network-backed ones"
+	@echo "🧰 build      build sdist and wheel into dist/"
+	@echo "🧹 clean      remove caches and build artefacts"
 
 venv:
 	$(PYTHON) -m venv $(VENV)

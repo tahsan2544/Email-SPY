@@ -6,24 +6,24 @@ labels: bug
 assignees: ""
 ---
 
-**Command run**
+**🖥️ Command run**
 
 ```
 emailscope ...
 ```
 
-**What happened**
+**⚠️ What happened**
 
 <!-- paste the relevant panel or the --json excerpt -->
 
-**What you expected**
+**🎯 What you expected**
 
-**Environment**
+**🧭 Environment**
 
 - OS:
 - Python version:
 - EmailScope version (`emailspy --version`):
 
-**Keys in use**
+**🔑 Keys in use**
 
 <!-- EMAILREP_API_KEY / HIBP_API_KEY — say present/absent only, never paste the value -->

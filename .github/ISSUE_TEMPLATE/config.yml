@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Security report
-    url: https://github.com/OWNER/REPO/security/advisories/new
+  - name: 🛡️ Security report
+    url: https://github.com/tahsan2544/Email-SPY/security/advisories/new
     about: Report a vulnerability privately instead of opening an issue.
+  - name: 📖 Documentation
+    url: https://github.com/tahsan2544/Email-SPY#readme
+    about: Setup, usage, output formats and the ethics section live in the README.

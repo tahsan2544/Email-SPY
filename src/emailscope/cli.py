@@ -44,6 +44,26 @@ MODULES = {
     "dorks": "Ready-to-run search-engine and platform queries",
 }
 
+MODULE_ICONS = {
+    "identity": "🪪",
+    "dns": "🌐",
+    "rdap": "📜",
+    "ct": "🔒",
+    "hosts": "👀",
+    "urlscan": "🖥️",
+    "gravatar": "🖼️",
+    "pgp": "🔑",
+    "github": "💻",
+    "mentions": "💬",
+    "social": "📌",
+    "accounts": "👤",
+    "mailhost": "🗄️",
+    "smtp": "📨",
+    "reputation": "⭐",
+    "breaches": "🚨",
+    "dorks": "🔎",
+}
+
 DEFAULT_LINK_LIMIT = 12
 OPEN_LIMIT = 8
 PROXY_SCHEMES = ("http://", "https://", "socks4://", "socks5://", "socks5h://", "socks4a://")
@@ -60,7 +80,13 @@ def build_parser() -> argparse.ArgumentParser:
         prog=_prog(),
         description="Investigate an email address: owner identity, linked accounts, "
         "mail infrastructure and public footprint.",
-        epilog="Public-source research only. Investigate addresses you are authorised to look at.",
+        epilog="""examples:
+  emailspy jane@example.com                       full investigation
+  emailspy --only social nasa@example.com         the five mandatory accounts
+  emailspy --json -o case.json jane@example.com   machine-readable export
+  emailspy --list-modules                         see what each module checks
+
+🔎 public-source research only — investigate addresses you are authorised to look at.""",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("email", nargs="*", help="email address(es) to investigate")
@@ -195,11 +221,21 @@ def _note(console: Console, theme: Theme, label: str, message: str) -> None:
 
 def _print_modules(console: Console, theme: Theme) -> None:
     grid = Table.grid(padding=(0, 2))
-    grid.add_column(style=f"bold {theme.signal}", no_wrap=True, width=12)
+    grid.add_column(style=f"bold {theme.signal}", no_wrap=True, width=16)
     grid.add_column(style=theme.ink, overflow="fold")
+    grid.add_row(
+        Text("module", style=f"bold {theme.graphite}"),
+        Text("what it checks", style=f"bold {theme.graphite}"),
+    )
     for name, description in MODULES.items():
-        grid.add_row(name, description)
+        grid.add_row(f"{MODULE_ICONS[name]}  {name}", description)
     console.print(grid)
+    _note(
+        console,
+        theme,
+        "tip",
+        "run a subset: emailspy --only identity,dns jane@example.com",
+    )
 
 
 def _print_themes(console: Console, theme: Theme) -> None:
@@ -207,13 +243,20 @@ def _print_themes(console: Console, theme: Theme) -> None:
     grid.add_column(style=f"bold {theme.signal}", no_wrap=True, width=10)
     grid.add_column(no_wrap=True, width=12)
     grid.add_column(style=theme.ink, no_wrap=True)
-    grid.add_column(style=theme.graphite, overflow="fold")
+    grid.add_column(style=theme.graphite, no_wrap=True)
+    grid.add_row(
+        Text("theme", style=f"bold {theme.graphite}"),
+        Text("", style=f"bold {theme.graphite}"),
+        Text("wordmark", style=f"bold {theme.graphite}"),
+        Text("in use", style=f"bold {theme.graphite}"),
+    )
     for name in sorted(THEMES):
         swatch = THEMES[name]
         chips = Text()
         for token in (swatch.signal, swatch.stamp, swatch.remote, swatch.alert):
             chips.append("██", style=token)
-        grid.add_row(name, chips, swatch.wordmark, f"default={name == DEFAULT_THEME}")
+        marker = "⭐ default" if name == DEFAULT_THEME else ""
+        grid.add_row(name, chips, swatch.wordmark, marker)
     console.print(grid)
 
 

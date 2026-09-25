@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "emailscope"
-version = "1.9.0"
+version = "1.10.0"
 description = "Terminal OSINT tool that investigates an email address: owner identity, linked social accounts, mail infrastructure and public footprint."
 readme = "README.md"
 license = "MIT"
@@ -30,6 +30,12 @@ dependencies = [
     "dnspython>=2.4",
     "rich>=13.7",
 ]
+
+[project.urls]
+Homepage = "https://github.com/tahsan2544/Email-SPY"
+Repository = "https://github.com/tahsan2544/Email-SPY"
+Issues = "https://github.com/tahsan2544/Email-SPY/issues"
+Changelog = "https://github.com/tahsan2544/Email-SPY/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [

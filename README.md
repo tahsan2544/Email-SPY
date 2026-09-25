@@ -1,5 +1,9 @@
 # 🕵️ Email Spy
 
+[![CI](https://github.com/tahsan2544/Email-SPY/actions/workflows/ci.yml/badge.svg)](https://github.com/tahsan2544/Email-SPY/actions/workflows/ci.yml)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 **A terminal OSINT tool that turns one email address into a readable investigation.**
 
 Give it an address and it answers, on one screen: **who is behind it**, **which
@@ -165,7 +169,7 @@ finding with its raw data and generated links.
 ```json
 {
   "tool": "emailscope",
-  "version": "1.7.0",
+  "version": "1.10.0",
   "generated_at": "2026-09-25T16:33:36.107415+00:00",
   "email": "john.doe@example.com",
   "findings": [
@@ -210,7 +214,7 @@ in one file. Nested detail stays in JSON — CSV is for scanning, JSON is for di
 ```markdown
 # Email Spy report — `john.doe@example.com`
 
-Generated 2026-09-25 16:33 UTC by emailspy 1.7.0.
+Generated 2026-09-25 16:33 UTC by emailspy 1.10.0.
 
 ## [INFO] Address
 
@@ -301,7 +305,7 @@ the first request is sent**.
 ████  █ █ █ █████   █   █        ███  ████    █
 █     █   █ █   █   █   █           █ █       █
 █████ █   █ █   █ █████ █████   ████  █       █
-CASE 33252C                                                 2026-09-25 17:23 UTC
+CASE 33252C                                                 2026-09-25 17:33 UTC
 SUBJECT  m@mullenweg.com
 ────────────────────────────────────────────────────────────────────────────────
     PROVIDER   mullenweg.com           MAILBOX   not checked
@@ -353,7 +357,7 @@ X search           https://www.google.com/search?q=site%3Ax.com+OR+site%3Atwitte
 └──────────────────────────────────────────────────────────────────────────────┘
 Sourcegraph search      https://sourcegraph.com/search?q=context%3Aglobal+m%40m…
 
-FINDINGS 1   SOURCES 17   SKIPPED 12                CASE 33252C   emailspy 1.9.0
+FINDINGS 1   SOURCES 17   SKIPPED 12              CASE 33252C    emailspy 1.10.0
 ```
 
 ### 📖 How to read it
@@ -462,7 +466,7 @@ Investigate an email address: owner identity, linked accounts, mail infrastructu
 | `--no-links` / `--link-limit N` | control how many search links are printed (`0` = all) |
 | `--quiet` | hide skipped modules |
 | `--theme {spy,classic}` | colour scheme and wordmark (default `spy`) |
-| `--list-modules` | list the 16 modules and exit |
+| `--list-modules` | list the 17 modules (with icons) and exit |
 | `--list-themes` | show each theme's palette and default |
 | `--no-color` | disable ANSI colour (also respects `NO_COLOR`) |
 | `--version` | print the version and exit |
