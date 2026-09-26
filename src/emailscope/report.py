@@ -103,6 +103,7 @@ _SCALAR_KEYS = (
 
 _SKIP_ROW_KEYS = {
     "attempts",
+    "avatar_datauri",
     "commits",
     "repositories",
     "matches",
@@ -758,6 +759,9 @@ def to_json(case: Case) -> str:
         "generated_at": datetime.now(timezone.utc).isoformat(),
         **case.to_dict(),
     }
+    # The embedded avatar belongs to the HTML report; JSON carries the URL.
+    for finding in payload.get("findings", []):
+        finding.get("data", {}).pop("avatar_datauri", None)
     return json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=False)
 
 

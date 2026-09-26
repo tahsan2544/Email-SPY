@@ -153,6 +153,7 @@ ol.findings { list-style: none; margin: 0; padding: 0; counter-reset: idx; }
 .chip--error { color: var(--alert); }
 .chip--skip { color: var(--muted); }
 .fsum { color: var(--summary); margin: 0.3rem 0 0; }
+.avatar { display: block; width: 6.4rem; height: 6.4rem; border-radius: 50%; object-fit: cover; margin-top: 0.6rem; }
 .rows {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
@@ -340,6 +341,12 @@ def _finding(finding: Finding) -> str:
     parts = [head]
     if summary:
         parts.append(f'<p class="fsum">{summary}</p>')
+    datauri = finding.data.get("avatar_datauri")
+    if isinstance(datauri, str) and datauri.startswith("data:image/"):
+        parts.append(
+            f'<img class="avatar" src="{escape(datauri, quote=True)}" '
+            'alt="Avatar registered for this address">'
+        )
     rows, tables = _split(finding.data)
     body = list(tables)
     if rows:

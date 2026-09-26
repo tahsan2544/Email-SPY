@@ -2,14 +2,19 @@
 
 from __future__ import annotations
 
+import base64
 from typing import Any
 
 from emailscope.context import Context
 from emailscope.models import Finding
 
 PROFILE_URL = "https://api.gravatar.com/v3/profiles/{sha256}"
-AVATAR_URL = "https://www.gravatar.com/avatar/{sha256}?d=404"
+AVATAR_URL = "https://www.gravatar.com/avatar/{sha256}?d=404&s=200"
 LEGACY_PROFILE_URL = "https://en.gravatar.com/{md5}.json"
+
+# The HTML report embeds the fetched bytes so the file still shows the picture
+# with no network. Bigger responses are linked instead of embedded.
+EMBED_LIMIT = 300_000
 
 
 async def collect(context: Context) -> Finding:
@@ -33,11 +38,19 @@ async def collect(context: Context) -> Finding:
         except ValueError:
             profile = None
 
-    avatar_status = 404
     avatar = await context.client.get(AVATAR_URL.format(sha256=identity.gravatar_sha256), retries=1)
     avatar_status = avatar.status_code
+    avatar_mime = ""
+    if avatar_status == 200:
+        avatar_mime = (avatar.headers.get("content-type") or "").partition(";")[0].strip().lower()
+    # Only an actual image counts as an avatar — a 200 HTML page is not a picture.
+    has_avatar = avatar_mime.startswith("image/")
+    avatar_datauri = ""
+    if has_avatar and len(avatar.content) <= EMBED_LIMIT:
+        encoded = base64.b64encode(avatar.content).decode("ascii")
+        avatar_datauri = f"data:{avatar_mime};base64,{encoded}"
 
-    if profile is None and avatar_status != 200:
+    if profile is None and not has_avatar:
         legacy = await context.client.get(
             LEGACY_PROFILE_URL.format(md5=identity.gravatar_md5), retries=1
         )
@@ -50,17 +63,25 @@ async def collect(context: Context) -> Finding:
                 profile = {"legacy": entries[0]}
 
     if profile is None:
-        if avatar_status == 200:
-            return Finding(
+        if has_avatar:
+            finding = Finding(
                 module="gravatar",
                 title="Gravatar",
                 status="info",
                 summary="Avatar registered for this address, but no public profile.",
-                data={**data, "avatar": True, "profile": None},
+                data={
+                    **data,
+                    "avatar": True,
+                    "avatar_url": AVATAR_URL.format(sha256=identity.gravatar_sha256),
+                    "profile": None,
+                },
                 links=[
                     {"label": "Avatar", "url": AVATAR_URL.format(sha256=identity.gravatar_sha256)}
                 ],
             )
+            if avatar_datauri:
+                finding.data["avatar_datauri"] = avatar_datauri
+            return finding
         return Finding(
             module="gravatar",
             title="Gravatar",
@@ -102,9 +123,13 @@ async def collect(context: Context) -> Finding:
     if profile_page:
         links.append({"label": "Gravatar profile", "url": profile_page})
 
+    if has_avatar:
+        avatar_url = AVATAR_URL.format(sha256=identity.gravatar_sha256)
+        links.insert(0, {"label": "Avatar", "url": avatar_url})
+
     data.update(
         {
-            "avatar": avatar_status == 200,
+            "avatar": has_avatar,
             "avatar_url": profile.get("avatar_url")
             or AVATAR_URL.format(sha256=identity.gravatar_sha256),
             "display_name": display_name,
@@ -116,6 +141,8 @@ async def collect(context: Context) -> Finding:
             "verified_accounts": accounts,
         }
     )
+    if avatar_datauri:
+        data["avatar_datauri"] = avatar_datauri
 
     bits = [b for b in (display_name, job_title, company, location) if b]
     summary = ", ".join(bits) if bits else "Public Gravatar profile found."

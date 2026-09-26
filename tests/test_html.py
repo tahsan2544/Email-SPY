@@ -86,3 +86,25 @@ def test_readable_text_colours_clear_wcag_aa():
     for colour in (SPY.muted, SPY.graphite, SPY.ink, SPY.summary, SPY.signal, SPY.remote):
         assert _contrast(_readable(colour, background), background) >= 4.5
     assert _readable(SPY.signal, background) == SPY.signal  # already passes, untouched
+
+
+def test_html_embeds_the_real_avatar_when_one_exists():
+    case = _case()
+    case.add(
+        Finding(
+            module="gravatar",
+            title="Gravatar",
+            status="info",
+            summary="Avatar registered for this address, but no public profile.",
+            data={"avatar": True, "avatar_datauri": "data:image/jpeg;base64,AAAA"},
+        )
+    )
+    html = to_html(case)
+    assert '<img class="avatar" src="data:image/jpeg;base64,AAAA"' in html
+    assert "Avatar registered for this address" in html
+
+
+def test_html_shows_no_picture_when_the_address_has_none():
+    # The base case carries no avatar — an honest absence beats a placeholder.
+    html = to_html(_case())
+    assert 'class="avatar"' not in html
