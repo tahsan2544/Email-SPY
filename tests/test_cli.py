@@ -3,7 +3,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-from emailscope.cli import build_parser, main, resolve_options
+from rich.console import Console
+
+from emailscope.cli import _shortcuts_menu, build_parser, main, resolve_options
+from emailscope.models import Case, Finding
+from emailscope.theme import get_theme
 
 
 def test_parser_exposes_every_module_toggle():
@@ -157,3 +161,35 @@ def test_json_output_written_to_file(tmp_path, capsys):
     payload = json.loads(target.read_text())
     assert payload["email"] == "john.doe@example.com"
     assert any(f["module"] == "identity" for f in payload["findings"])
+
+
+def test_shortcuts_menu_never_runs_without_a_tty(monkeypatch):
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: False)
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: False)
+    # Piped or scripted sessions must not block waiting for a keypress.
+    _shortcuts_menu(Console(), get_theme("spy"), [Case(email="a@example.com")], proxy=None)
+
+
+def test_shortcuts_menu_saves_json_and_finishes(monkeypatch, tmp_path):
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: True)
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
+    keys = iter(["j", "q"])
+    monkeypatch.setattr("emailscope.cli._read_key", lambda: next(keys))
+    monkeypatch.chdir(tmp_path)
+
+    case = Case(email="john.doe@example.com")
+    case.add(
+        Finding(
+            module="identity",
+            title="Address",
+            status="info",
+            summary="Custom domain.",
+            data={"email": "john.doe@example.com", "valid": True},
+        )
+    )
+    _shortcuts_menu(Console(), get_theme("spy"), [case], proxy=None)
+
+    saved = tmp_path / "john.doe@example.com.json"
+    assert saved.exists()
+    payload = json.loads(saved.read_text())
+    assert payload["email"] == "john.doe@example.com"

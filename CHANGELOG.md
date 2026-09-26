@@ -4,6 +4,27 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2026-09-25
+
+### Added
+
+- **The real avatar picture.** The Gravatar module now fetches the address's
+  avatar (`gravatar.com/avatar/{hash}?d=404&s=200`, verified live: real
+  addresses answer 200 with a JPEG, unknown ones 404), and the self-contained
+  HTML report embeds the fetched bytes so the picture shows with no network.
+  Only a genuine `image/*` response counts: a blocked HTML page or a missing
+  avatar is reported as missing — never a placeholder.
+- **Post-run shortcuts.** On an interactive terminal the rich report now ends
+  with a key menu: `[j]` save JSON, `[m]` save Markdown, `[h]` save HTML,
+  `[o]` open links, `[q]` finish. Piped/scripted sessions never block.
+
+### Changed
+
+- The JSON export carries `avatar` + `avatar_url` but not the embedded image
+  bytes; the embedded picture belongs to the HTML report.
+- Install docs use `python3` explicitly for users whose system has no `python`
+  alias.
+
 ## [1.10.0] - 2026-09-25
 
 ### Added

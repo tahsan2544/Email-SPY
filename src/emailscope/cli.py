@@ -31,7 +31,7 @@ MODULES = {
     "ct": "Certificate transparency names for the domain (certspotter)",
     "hosts": "Hostnames observed for the domain (HackerTarget)",
     "urlscan": "Public browser scans of the domain (urlscan.io)",
-    "gravatar": "Public Gravatar profile and linked verified accounts",
+    "gravatar": "Public Gravatar profile, the real avatar picture and linked accounts",
     "pgp": "OpenPGP key published for the address (keys.openpgp.org)",
     "github": "Public commits signed with the address (name + login)",
     "mentions": "The address itself in public code and forums (Sourcegraph, HN, Stack Exchange)",
@@ -316,6 +316,70 @@ def _write(path: str, content: str) -> None:
     target.write_text(content, encoding="utf-8")
 
 
+def _read_key() -> str:
+    """One keypress with no Enter needed; ``''`` when the terminal cannot deliver one."""
+    if os.name == "nt":  # pragma: no cover - Windows console path
+        import msvcrt
+
+        return msvcrt.getwch()
+    import termios
+    import tty
+
+    fd = sys.stdin.fileno()
+    attrs = termios.tcgetattr(fd)
+    tty.setcbreak(fd)
+    try:
+        return sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, attrs)
+
+
+_SHORTCUTS = (
+    ("j", "save JSON"),
+    ("m", "save Markdown"),
+    ("h", "save HTML"),
+    ("o", "open links"),
+    ("q", "finish"),
+)
+
+
+def _shortcuts_menu(console: Console, theme: Theme, cases: list[Case], proxy: str | None) -> None:
+    """After a rich report, offer export/open shortcuts on interactive terminals."""
+    if not cases or not (sys.stdin.isatty() and sys.stdout.isatty()):
+        return
+
+    hint = Text("\n💡  next:  ", style=theme.muted)
+    for key, what in _SHORTCUTS:
+        hint.append(f"[{key}] ", style=f"bold {theme.signal}")
+        hint.append(f"{what}   ", style=theme.muted)
+    console.print(hint)
+
+    stem = cases[0].email if len(cases) == 1 else "report"
+    while True:
+        try:
+            key = (_read_key() or "").lower()
+        except (KeyboardInterrupt, EOFError):
+            console.print()
+            return
+        if not key or key in ("q", "\x03"):
+            return
+        if key in ("\n", "\r", " "):
+            continue
+        if key == "j":
+            _write(f"{stem}.json", _json_payload(cases))
+            _note(console, theme, "saved", f"{stem}.json")
+        elif key == "m":
+            _write(f"{stem}.md", "\n\n".join(to_markdown(case) for case in cases))
+            _note(console, theme, "saved", f"{stem}.md")
+        elif key == "h":
+            _write(f"{stem}.html", to_html(cases, proxy=proxy, theme=theme))
+            _note(console, theme, "saved", f"{stem}.html")
+        elif key == "o":
+            _open_links(cases, console, theme)
+        else:
+            console.print(hint)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -423,6 +487,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.open_links:
         _open_links(cases, console, theme)
+
+    _shortcuts_menu(console, theme, cases, proxy=options.proxy)
 
     return 0
 

@@ -41,7 +41,8 @@ Reports open with the **EMAIL SPY** wordmark under the default `spy` theme —
 - 🏗️ **Infrastructure** — mail exchangers, SPF/DKIM/DMARC/BIMI, domain
   registration, certificate transparency, observed hosts, open ports and known
   CVEs on the mail servers.
-- 📣 **Public footprint** — Gravatar profile, signed commits, registered
+- 📣 **Public footprint** — Gravatar profile with its **real avatar picture**,
+  signed commits, registered
   handles on 8 more platforms, published PGP keys, and where the address itself
   turns up in public code and discussions (Sourcegraph, Hacker News, Stack
   Exchange).
@@ -56,19 +57,25 @@ Reports open with the **EMAIL SPY** wordmark under the default `spy` theme —
 
 ## 📦 Install
 
-Requires **Python 3.10+**.
+Requires **Python 3.10+** — check with `python3 --version`. The commands below
+use `python3` on purpose: plenty of systems ship no `python` alias at all.
 
 ```bash
 git clone <your-fork-url>
 cd emailscope
-python -m venv .venv && source .venv/bin/activate
-pip install -e .
+python3 -m venv .venv && source .venv/bin/activate
+python3 -m pip install -e .
+emailspy --version
 ```
+
+> ❓ **`emailspy: command not found`?** The virtual environment is not active.
+> Run `source .venv/bin/activate` first (`.venv\Scripts\activate` on Windows),
+> then try again.
 
 Or straight from PyPI once published:
 
 ```bash
-pipx install emailscope   # provides `emailspy` and `emailscope`
+pipx install emailscope   # provides `emailspy` and `emailscope`, no venv needed
 ```
 
 ---
@@ -77,7 +84,13 @@ pipx install emailscope   # provides `emailspy` and `emailscope`
 
 ```bash
 # 🖥️ full investigation, rich terminal report
+#    ⌨️ on your own terminal it ends with a key menu:
+#    j/m/h save JSON/Markdown/HTML · o opens links · q finishes
 emailspy jane.doe@example.com
+
+# 🖼️ the address's real Gravatar picture — HTML embeds it;
+#    no avatar → the report says so, never a placeholder
+emailspy jane.doe@example.com --only identity,gravatar -o avatar.html
 
 # 🤖 machine-readable
 emailspy jane.doe@example.com --json -o report.json
@@ -169,7 +182,7 @@ finding with its raw data and generated links.
 ```json
 {
   "tool": "emailscope",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "generated_at": "2026-09-25T16:33:36.107415+00:00",
   "email": "john.doe@example.com",
   "findings": [
@@ -214,7 +227,7 @@ in one file. Nested detail stays in JSON — CSV is for scanning, JSON is for di
 ```markdown
 # Email Spy report — `john.doe@example.com`
 
-Generated 2026-09-25 16:33 UTC by emailspy 1.10.0.
+Generated 2026-09-25 16:33 UTC by emailspy 1.11.0.
 
 ## [INFO] Address
 
@@ -238,9 +251,29 @@ and prints as a light-mode dossier.
 
 - ✅ Keeps the terminal grammar: status stamps, left-rule panels,
   right-aligned source provenance, the summary strip, the ethics line
+- ✅ Embeds the address's **real Gravatar picture** when one exists — the
+  bytes are fetched during the run, so the file still shows the face with no
+  network; a missing avatar stays missing (no placeholder art)
 - ✅ A batch becomes **one file with a section per address**
 - ✅ Honours `--theme`
 - ✅ WCAG AA contrast, visible focus rings, responsive down to phone width
+
+### ⌨️ After the report — one-key shortcuts
+
+When the rich report finishes on **your own terminal** (interactive, not
+piped), a key menu appears under the report:
+
+| Key | Does |
+| --- | --- |
+| `j` | save the JSON report as `<address>.json` |
+| `m` | save the Markdown report as `<address>.md` |
+| `h` | save the self-contained HTML report as `<address>.html` |
+| `o` | open the top search links in your browser |
+| `q` | finish |
+
+Piped output, `--json` / `--csv` / `--markdown` / `--html` runs, and anything
+non-interactive never show the menu — a scripted session must never block
+waiting for a keypress.
 
 ### 📚 Single address vs. batch — what changes
 
@@ -278,7 +311,7 @@ the first request is sent**.
 | 📜 `ct` | certspotter | certificate-transparency **subdomains of the address's own domain**, issuance count, first/last certificate date |
 | 🔎 `hosts` | HackerTarget | hostnames and addresses observed for the address's own domain |
 | 🌍 `urlscan` | urlscan.io | **recent public browser scans of the address's own domain**: scanned page URLs, serving IP, country, HTTP status and scan dates — skipped for free-mail providers |
-| 🖼️ `gravatar` | Gravatar v3 API | display name, location, job title, company, about text, avatar, **verified social accounts linked to the address** |
+| 🖼️ `gravatar` | Gravatar v3 API | display name, location, job title, company, about text, **the real avatar picture** (embedded in HTML), **verified social accounts linked to the address** |
 | 🔏 `pgp` | keys.openpgp.org | **published OpenPGP key**: fingerprint, user IDs, and the *other* addresses the owner published on the same key (a hit means the address is verified there) |
 | ⌨️ `github` | GitHub commit search | **real name from commit metadata**, linked GitHub login when the address is verified, repositories, first/last seen |
 | 📌 `social` | instagram + x + linkedin + github + youtube | **the five mandatory accounts** — one `exists` / `missing` / `unknown` verdict per platform for the derived usernames, always its own panel (falls back to `site:` search links when no username can be derived) |
@@ -305,7 +338,7 @@ the first request is sent**.
 ████  █ █ █ █████   █   █        ███  ████    █
 █     █   █ █   █   █   █           █ █       █
 █████ █   █ █   █ █████ █████   ████  █       █
-CASE 33252C                                                 2026-09-25 17:33 UTC
+CASE 33252C                                                 2026-09-26 02:01 UTC
 SUBJECT  m@mullenweg.com
 ────────────────────────────────────────────────────────────────────────────────
     PROVIDER   mullenweg.com           MAILBOX   not checked
@@ -357,7 +390,7 @@ X search           https://www.google.com/search?q=site%3Ax.com+OR+site%3Atwitte
 └──────────────────────────────────────────────────────────────────────────────┘
 Sourcegraph search      https://sourcegraph.com/search?q=context%3Aglobal+m%40m…
 
-FINDINGS 1   SOURCES 17   SKIPPED 12              CASE 33252C    emailspy 1.10.0
+FINDINGS 1   SOURCES 17   SKIPPED 12              CASE 33252C    emailspy 1.11.0
 ```
 
 ### 📖 How to read it
@@ -647,6 +680,11 @@ src/emailscope/
 - Text-search sources were tested live and rejected for the same reason:
   grep.app sits behind a Vercel bot challenge (429), Reddit returns 403 to
   non-browser clients, and psbdmp does not answer at all.
+- Terminals cannot draw pictures portably, so the **terminal report links the
+  avatar** instead of inlining it — the HTML report embeds the actual image.
+  When the address has no avatar the report says
+  `No Gravatar account for this address.` A blocked or non-image response is
+  never counted as a picture. No placeholder faces, ever.
 
 ---
 
