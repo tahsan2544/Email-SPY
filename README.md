@@ -485,6 +485,8 @@ usage: emailspy [-h] [--batch FILE] [-o FILE] [--json] [--csv] [--markdown]
 Investigate an email address: owner identity, linked accounts, mail infrastructure and public footprint.
 ```
 
+The real `--help` also ends with copy-paste examples and the ethics line.
+
 | 🚩 Flag | Effect |
 | --- | --- |
 | `-o FILE` | write results to a file; `.json` / `.md` / `.csv` / `.html` choose the format |

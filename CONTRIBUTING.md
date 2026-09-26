@@ -24,6 +24,10 @@ Python 3.10 or newer.
    report renderer.
 4. **Tests ship with the change.** Bug fix → a test that fails before and
    passes after. New module → happy path plus at least one failure case.
+5. **README ships with the change.** If behaviour, flags, output, install
+   steps or the version change, update `README.md` in the same PR — stale
+   instructions are worse than none, and every claim must come from a run you
+   actually did.
 
 ## 🔌 Adding a probe site
 
