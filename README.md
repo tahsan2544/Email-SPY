@@ -182,7 +182,7 @@ finding with its raw data and generated links.
 ```json
 {
   "tool": "emailscope",
-  "version": "1.11.0",
+  "version": "1.11.1",
   "generated_at": "2026-09-25T16:33:36.107415+00:00",
   "email": "john.doe@example.com",
   "findings": [
@@ -227,7 +227,7 @@ in one file. Nested detail stays in JSON — CSV is for scanning, JSON is for di
 ```markdown
 # Email Spy report — `john.doe@example.com`
 
-Generated 2026-09-25 16:33 UTC by emailspy 1.11.0.
+Generated 2026-09-25 16:33 UTC by emailspy 1.11.1.
 
 ## [INFO] Address
 
@@ -338,7 +338,7 @@ the first request is sent**.
 ████  █ █ █ █████   █   █        ███  ████    █
 █     █   █ █   █   █   █           █ █       █
 █████ █   █ █   █ █████ █████   ████  █       █
-CASE 33252C                                                 2026-09-26 02:01 UTC
+CASE 33252C                                                 2026-09-28 01:08 UTC
 SUBJECT  m@mullenweg.com
 ────────────────────────────────────────────────────────────────────────────────
     PROVIDER   mullenweg.com           MAILBOX   not checked
@@ -390,7 +390,7 @@ X search           https://www.google.com/search?q=site%3Ax.com+OR+site%3Atwitte
 └──────────────────────────────────────────────────────────────────────────────┘
 Sourcegraph search      https://sourcegraph.com/search?q=context%3Aglobal+m%40m…
 
-FINDINGS 1   SOURCES 17   SKIPPED 12              CASE 33252C    emailspy 1.11.0
+FINDINGS 1   SOURCES 17   SKIPPED 12              CASE 33252C    emailspy 1.11.1
 ```
 
 ### 📖 How to read it
@@ -495,10 +495,10 @@ The real `--help` also ends with copy-paste examples and the ethics line.
 | `--only M1,M2` | run only the listed modules (see `emailspy --list-modules`) |
 | `--proxy URL` | route every request through a proxy — `socks5h://127.0.0.1:9150` for Tor, `http://127.0.0.1:8080` for a local forwarder |
 | `--no-<module>` | skip one module (see `emailspy --list-modules`) |
-| `--timeout N` | per-request timeout, seconds (default `12`) |
-| `--rate-limit S` | minimum delay between requests to the same host |
+| `--timeout N` | per-request timeout, seconds (default `12`; must be positive) |
+| `--rate-limit S` | minimum delay between requests to the same host (zero or more) |
 | `--open` | open the top 8 generated search links in your default browser |
-| `--no-links` / `--link-limit N` | control how many search links are printed (`0` = all) |
+| `--no-links` / `--link-limit N` | control how many search links are printed (`0` = all; negatives rejected) |
 | `--quiet` | hide skipped modules |
 | `--theme {spy,classic}` | colour scheme and wordmark (default `spy`) |
 | `--list-modules` | list the 17 modules (with icons) and exit |

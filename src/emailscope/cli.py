@@ -188,6 +188,12 @@ def _validated_proxy(value: str) -> str:
 
 
 def resolve_options(args: argparse.Namespace) -> Options:
+    if args.timeout <= 0:
+        raise ValueError("--timeout must be greater than zero seconds.")
+    if args.rate_limit < 0:
+        raise ValueError("--rate-limit cannot be negative.")
+    if args.link_limit < 0:
+        raise ValueError("--link-limit cannot be negative (use 0 for all links).")
     options = Options(
         timeout=args.timeout,
         rate_limit=args.rate_limit,

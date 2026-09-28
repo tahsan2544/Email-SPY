@@ -222,3 +222,45 @@ def test_parse_mx(records, expected_hosts):
 def test_parse_mx_orders_by_priority():
     hosts = _parse_mx(["30 b.example.com.", "10 a.example.com."])
     assert [host["priority"] for host in hosts] == [10, 30]
+
+
+def test_structured_values_render_readably_never_as_python_repr():
+    case = Case(email="john.doe@example.com")
+    case.add(
+        Finding(
+            module="github",
+            title="Code footprint (GitHub)",
+            status="hit",
+            summary="1 commit.",
+            data={
+                "accounts": [{"login": "johndoe", "profile": "https://github.com/johndoe"}],
+                "entry": {"service": "WordPress", "url": "https://example.blog"},
+            },
+        )
+    )
+
+    md = to_markdown(case)
+    assert "login: johndoe" in md
+    assert "service: WordPress" in md
+    assert "{'login'" not in md and "{'service'" not in md
+
+    console = Console(file=StringIO(), force_terminal=True, width=100)
+    render(case, console, show_links=False)
+    rendered = console.file.getvalue()
+    assert "login: johndoe" in rendered
+    assert "{'login'" not in rendered
+
+
+def test_empty_containers_render_as_an_em_dash_in_markdown():
+    case = Case(email="john.doe@example.com")
+    case.add(
+        Finding(
+            module="gravatar",
+            title="Gravatar",
+            status="info",
+            data={"verified_accounts": [], "provider": None},
+        )
+    )
+    md = to_markdown(case)
+    assert "| Verified Accounts | — |" in md
+    assert "| Provider | — |" in md

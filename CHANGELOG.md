@@ -4,6 +4,20 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.1] - 2026-09-28
+
+### Fixed
+
+- Structured values (GitHub account records, Gravatar verified accounts) were
+  printed as raw Python dicts — `{'login': '…'}` — in the terminal and
+  Markdown reports. They now render as readable `key: value` text everywhere
+  (terminal, Markdown, HTML), and an empty list shows `—` instead of nothing.
+- `--timeout -1`, `--rate-limit -5` and `--link-limit -3` were accepted
+  silently (a negative link limit quietly hid trailing links). All three are
+  now usage errors with a clear message.
+- Dict-valued fields were hidden from the terminal/Markdown rows while HTML
+  showed them; all formats now agree.
+
 ## [1.11.0] - 2026-09-25
 
 ### Added

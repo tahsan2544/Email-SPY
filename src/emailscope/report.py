@@ -158,6 +158,13 @@ def _shorten(value: str) -> str:
     return value
 
 
+def _cell(value: Any) -> str:
+    """Readable text for a structured value — never a raw ``repr()``."""
+    if isinstance(value, dict):
+        return ", ".join(f"{key}: {val}" for key, val in value.items())
+    return str(value)
+
+
 def default_rows(data: dict[str, Any]) -> list[tuple[str, Any]]:
     """Flatten a finding's payload into printable ``label, value`` rows."""
     rows: list[tuple[str, Any]] = []
@@ -169,7 +176,7 @@ def default_rows(data: dict[str, Any]) -> list[tuple[str, Any]]:
     for key, value in data.items():
         if key in _SKIP_ROW_KEYS or key in seen:
             continue
-        if isinstance(value, (str, int, float, bool, list)):
+        if isinstance(value, (str, int, float, bool, list, dict)):
             rows.append((_label_for(key), value))
     return rows
 
@@ -468,10 +475,12 @@ class Reporter:
         theme = self.theme
         if isinstance(value, bool):
             return Text("yes" if value else "no", style=theme.ink)
-        if isinstance(value, list):
+        if isinstance(value, (dict, list)):
             if not value:
                 return Text("—", style=theme.muted)
-            return Text(", ".join(_shorten(str(v)) for v in value), style=theme.ink)
+            if isinstance(value, dict):
+                return Text(_shorten(_cell(value)), style=theme.ink)
+            return Text(_shorten(", ".join(_cell(v) for v in value)), style=theme.ink)
         if value in (None, ""):
             return Text("—", style=theme.muted)
         return Text(_shorten(str(value)), style=theme.ink)
@@ -789,12 +798,16 @@ def to_csv(cases: Case | list[Case]) -> str:
 
 def _md_escape(value: Any) -> str:
     if isinstance(value, bool):
-        return "yes" if value else "no"
-    if isinstance(value, list):
-        return ", ".join(str(v) for v in value)
-    if value in (None, ""):
-        return "—"
-    return str(value).replace("|", "\\|").replace("\n", " ")
+        text = "yes" if value else "no"
+    elif isinstance(value, dict):
+        text = _cell(value)
+    elif isinstance(value, list):
+        text = ", ".join(_cell(v) for v in value) if value else "—"
+    elif value in (None, ""):
+        text = "—"
+    else:
+        text = str(value)
+    return text.replace("|", "\\|").replace("\n", " ")
 
 
 def to_markdown(case: Case) -> str:

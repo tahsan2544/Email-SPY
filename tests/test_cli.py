@@ -193,3 +193,13 @@ def test_shortcuts_menu_saves_json_and_finishes(monkeypatch, tmp_path):
     assert saved.exists()
     payload = json.loads(saved.read_text())
     assert payload["email"] == "john.doe@example.com"
+
+
+def test_invalid_numeric_flags_are_usage_errors(capsys):
+    for flag, value, mention in (
+        ("--timeout", "-1", "--timeout"),
+        ("--rate-limit", "-5", "--rate-limit"),
+        ("--link-limit", "-3", "--link-limit"),
+    ):
+        assert main(["user@example.com", flag, value]) == 1
+        assert mention in capsys.readouterr().err

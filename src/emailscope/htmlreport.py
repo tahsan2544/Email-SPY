@@ -17,6 +17,7 @@ from emailscope.models import Case, Finding
 from emailscope.report import (
     _ETHICS,
     _MODULE_SOURCES,
+    _cell,
     _label_for,
     case_reference,
     default_rows,
@@ -262,8 +263,10 @@ def _readable(colour: str, background: str) -> str:
 def _value(value: Any, cap: int | None = None) -> str:
     if isinstance(value, bool):
         return "yes" if value else "no"
+    if isinstance(value, dict):
+        return escape(_cell(value))
     if isinstance(value, list):
-        items = [str(item) for item in value]
+        items = [_cell(item) for item in value]
         if cap is not None and len(items) > cap:
             return escape(", ".join(items[:cap]) + f" … +{len(items) - cap} more")
         return escape(", ".join(items)) or "—"
